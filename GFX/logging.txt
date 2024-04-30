@@ -1,5 +1,0 @@
-2024-04-26 12:40:44 - INFO - Preparing files and folders for processing...
-2024-04-26 12:40:44 - ERROR - 
-The C:\Side Projects\EU4 Modding Tools\GFX\input_dds_files directory does not exist.
-
-It has now been created for you; make sure to place the DDS files that you want to process into the directory before proceeding.

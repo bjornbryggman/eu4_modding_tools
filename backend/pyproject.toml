@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "eu4 modding tools"
+version = "0.1.0"
+description = ""
+authors = ["bjornbryggman"]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+structlog = "^24.1.0"
+Wand = "^0.6.13"
+litellm = "^1.35.29"
+replicate = "^0.25.2"
+python-dotenv = "^1.0.1"
