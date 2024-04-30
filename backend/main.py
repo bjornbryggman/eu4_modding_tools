@@ -7,12 +7,10 @@ import os
 import structlog
 from dotenv import load_dotenv
 
-from api import replicate_image_generation
-from core.config import DirectoryConfig
-from app import gui_file_scaler
-from app import image_processing
-from utils import file_utils
-from utils import logging_utils
+from backend import gui_file_scaler, image_processing
+from backend.api import replicate_image_generation
+from backend.core.config import DirectoryConfig
+from backend.utils import logging_utils, file_utils
 
 load_dotenv()
 os.environ["REPLICATE_API_TOKEN"] = os.getenv("REPLICATE_API_KEY")
@@ -25,10 +23,12 @@ def main():
     """
 
     config = DirectoryConfig()
-    logging_utils.init_logger(config.LOG_LEVEL)
+    logging_utils.init_logger(config.LOG_LEVEL, config.LOG_DIRECTORY)
     log = structlog.stdlib.get_logger("./src/main.py")
+    log.info("Initiating workflow...")
     
     try:
+        
         for directory_path in [config.PNG_DIRECTORY, config.UPSCALED_DIRECTORY, config.RESIZED_DIRECTORY, config.OUTPUT_DIRECTORY]:
             file_utils.delete_directory(directory_path)
             file_utils.create_directory(directory_path)

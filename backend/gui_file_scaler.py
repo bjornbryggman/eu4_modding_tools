@@ -1,7 +1,7 @@
 import structlog
 import re
 from pathlib import Path
-from utils.file_utils import read_file, write_file
+from backend.utils.file_utils import read_file, write_file
 
 log = structlog.stdlib.get_logger("./src/gui_file_scaler.py")
 

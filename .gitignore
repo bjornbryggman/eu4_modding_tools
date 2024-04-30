@@ -1,5 +1,5 @@
 # environment variables
-
+.env
 
 # virtual python environment
 .venv
