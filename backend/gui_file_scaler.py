@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from backend.utils.file_utils import read_file, write_file
 
-log = structlog.stdlib.get_logger("./src/gui_file_scaler.py")
+log = structlog.stdlib.get_logger(__name__)
 
 class GUI_UI_Scaler:
     """
@@ -14,7 +14,7 @@ class GUI_UI_Scaler:
         """
         Initializes the GUIFileScaler with the appropriate scaling factor.
 
-        Parameters:
+        Args:
         - scale_factor: The scaling factor to apply.
 
         Returns:
@@ -26,7 +26,7 @@ class GUI_UI_Scaler:
         """
         Scales a matched value according to the scaling factor.
 
-        Parameters:
+        Args:
         - match: The regex match object containing the property name and value.
 
         Returns:
@@ -40,7 +40,7 @@ class GUI_UI_Scaler:
         """
         Scales values in the content according to the scaling factor.
 
-        Parameters:
+        Args:
         - content: The content of the GUI file to process.
 
         Returns:
@@ -54,19 +54,12 @@ def process_GUI_files(input_directory: Path, input_format: str, scale_factor: fl
     """
     Processes GUI files in a input_directory and scales their relevant positional values according to the scaling factor.
 
-    Parameters:
+    Args:
     - input_directory: The input_directory containing the GUI files to process.
     - scale_factor: The scaling factor to apply.
 
     Returns:
     - None.
-
-    Raises:
-    - FileNotFoundError: If a file is not found in the input_directory.
-    - PermissionError: If permission is denied when accessing a file.
-    - re.error: If a regex error occurs while processing a file.
-    - OSError: If an OS error is encountered while accessing a file.
-    - Exception: If an unexpected error occurs while processing a file.
     """
     log.debug(f"Processing GUI files in {input_directory} with scale factor {scale_factor}...")
 
@@ -88,15 +81,15 @@ def process_GUI_files(input_directory: Path, input_format: str, scale_factor: fl
                 else:
                     log.debug(f"No changes have been made to {file_path.name}.")
 
-            except PermissionError as e:
-                log.error(f"Permission denied when accessing {file_path}: {str(e)}")
-            except re.error as e:
-                log.error(f"Regex error while processing {file_path.name}: {str(e)}")
-            except OSError as e:
-                log.error(f"OS error encountered with {file_path.name}: {str(e)}")
-            except Exception as e:
-                log.error(f"Unexpected error while processing {file_path}: {str(e)}")
+            except PermissionError as error:
+                log.error(f"Permission denied when accessing {file_path}: {str(error)}")
+            except re.error as error:
+                log.error(f"Regex error while processing {file_path.name}: {str(error)}")
+            except OSError as error:
+                log.error(f"OS error encountered with {file_path.name}: {str(error)}")
+            except Exception as error:
+                log.error(f"Unexpected error while processing {file_path}: {str(error)}")
 
-    except FileNotFoundError as e:
-        log.warning(f"Failed to find any {input_format.upper()} files in {input_directory} directory: {str(e)}")
+    except FileNotFoundError as error:
+        log.warning(f"Failed to find any {input_format.upper()} files in {input_directory} directory: {str(error)}")
     
