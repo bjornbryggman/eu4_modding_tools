@@ -1,3 +1,4 @@
+import base64
 import shutil
 import structlog
 
@@ -48,6 +49,25 @@ def write_file(file_path, content):
         log.error(f"An I/O error occurred while writing to file '{file_path}': {str(error)}")
 
 
+def preprocess_text_formatting (prefix: str, file_path: str, suffix: str):    
+        string = str
+        read_file(file_path)
+        write_file(string, read_file)
+
+        content = f"""{prefix}{string}{suffix}"""
+
+        return content
+
+
+def get_base64_encoded_image (file_path):
+    with open(file_path, "rb") as image_file:
+        binary_data = image_file.read()
+        base_64_encoded_data = base64.b64encode(binary_data)
+        base64_string = base_64_encoded_data.decode('utf-8')
+    
+    return base64_string
+
+
 def create_directory(directory):
     """
     Checks if a directory exists; if not, creates it.
@@ -96,13 +116,3 @@ def delete_directory(directory):
         log.error(f"An operating system error occurred while deleting directory {directory}: {str(error)}")
     except Exception as error:
         log.error(f"An unexpected error occurred while deleting directory {directory}: {str(error)}")
-
-
-def preprocess_text_formatting (prefix: str, file_path: str, suffix: str):    
-        string = str
-        read_file(file_path)
-        write_file(string, read_file)
-
-        content = f"""{prefix}{string}{suffix}"""
-
-        return content

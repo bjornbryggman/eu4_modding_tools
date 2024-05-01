@@ -5,6 +5,10 @@ from pathlib import Path
 
 log = structlog.stdlib.get_logger(__name__)
 
+#====================================================#
+#          Functions for processing images           #
+#====================================================#
+
 def convert_images(input_directory: Path, output_directory: Path, input_format: str, output_format: str):
     """
     Converts images from one format to another.

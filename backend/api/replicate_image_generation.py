@@ -1,3 +1,4 @@
+import asyncio
 import replicate
 import structlog
 from pathlib import Path
@@ -57,3 +58,27 @@ def upscale_images(
 
     except Exception as error:
         log.error(f"An unexpected error occurred while upscaling {png_file}: {str(error)}")
+
+async def batching():
+    # https://github.com/replicate/replicate-python
+    model_version = "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b"
+    prompts = [
+        f"A chariot pulled by a team of {count} rainbow unicorns"
+        for count in ["two", "four", "six", "eight"]
+    ]
+
+    async with asyncio.TaskGroup() as tg:
+        tasks = [
+            tg.create_task(replicate.async_run(model_version, input={"prompt": prompt}))
+            for prompt in prompts
+        ]
+
+    results = await asyncio.gather(*tasks)
+    print(results)
+
+def pipelines():
+    laionide = replicate.models.get("afiaka87/laionide-v4").versions.get("b21cbe271e65c1718f2999b038c18b45e21e4fba961181fbfae9342fc53b9e05")
+    swinir = replicate.models.get("jingyunliang/swinir").versions.get("660d922d33153019e8c263a3bba265de882e7f4f70396546b6c9c8f9d47a021a")
+    image = laionide.predict(prompt="avocado armchair")
+    upscaled_image = swinir.predict(image=image)
+    return upscaled_image

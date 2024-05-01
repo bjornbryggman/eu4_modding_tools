@@ -8,12 +8,16 @@ import structlog
 from dotenv import load_dotenv
 
 from backend import gui_file_scaler, image_processing
-from backend.api import replicate_image_generation
+from backend.api import replicate_image_generation, litellm_text_generation
 from backend.core.config import DirectoryConfig
 from backend.utils import logging_utils, file_utils
 
 load_dotenv()
 os.environ["REPLICATE_API_TOKEN"] = os.getenv("REPLICATE_API_KEY")
+os.environ["OPENROUTER_API_TOKEN"] = os.getenv("OPENROUTER_API_KEY")
+specific_model = os.getenv("OPENROUTER_TEXT_META_LLAMA-3_70B_NITRO")
+
+litellm_text_generation.streaming_text_completion_call("user", "this is a text. write me a funny poem about a famous historical figure", specific_model)
 
 def main():
     """
