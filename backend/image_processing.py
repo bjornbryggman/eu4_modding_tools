@@ -30,7 +30,6 @@ def convert_images(input_directory: Path, output_directory: Path, input_format: 
             output_path = output_directory / (input_file.stem + f".{output_format}")
             
             try:
-            
                 with Image(filename=str(input_file)) as img:
                     img.format = output_format
                     img.save(filename=str(output_path))
@@ -49,9 +48,8 @@ def convert_images(input_directory: Path, output_directory: Path, input_format: 
             except Exception as error:
                 log.error(f"An unexpected error occurred when converting {input_file} to {output_format.upper()} format: {str(error)}")
 
-
     except FileNotFoundError as error:
-        log.error(f"Failed to find any {input_format.upper()} files in {input_directory} directory: {str(error)}")
+        log.error(f"Failed to find any {input_format.upper()} files in {input_directory}: {str(error)}")
     except Exception as error:
         log.error(f"An unexpected error occurred: {str(error)}")
 
@@ -94,10 +92,9 @@ def resize_images(input_directory: Path, output_directory: Path, input_format: s
                 log.error(f"OS error occurred while resizing {upscaled_file}: {str(error)}")
             except Exception as error:
                 log.error(f"An unexpected error occurred while resizing {upscaled_file}: {str(error)}")
-
     
     except FileNotFoundError as error:
-        log.error(f"Failed to find any upscaled images in {input_directory} directory: {str(error)}")
+        log.error(f"Failed to find any upscaled images in {input_directory}: {str(error)}")
     except Exception as error:
         log.error(f"An unexpected error occurred: {str(error)}")
 

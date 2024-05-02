@@ -1,20 +1,22 @@
 import os
 import structlog
-from dotenv import load_dotenv
+import dotenv
+import asyncio
+from backend.api import openrouter
 
-from backend.api import litellm_text_generation
+dotenv.load_dotenv()
 
-load_dotenv()
+async def test():
+    role = "user"
+    text_content = "Write me a haiku about the spring breeze."
+    model = "gpt-3.5-turbo"
+    api_key = os.getenv("OPENAI_API_KEY")
 
-
-def test():
-    os.environ["OPENROUTER_API_KEY"] = os.getenv("OPENROUTER_API_KEY")
-    specific_model = os.getenv("OPENROUTER_TEXT_META_LLAMA-3_70B_NITRO")
     log = structlog.stdlib.get_logger(__name__)
 
     log.info("Initiating workflow...")
 
-    litellm_text_generation.text_completion_call("user", "this is a text. write me a haiku about a famous historical figure", specific_model, os.getenv("OPENROUTER_API_KEY"), False)
+    await openrouter.streaming_text_completion(role, text_content, model, api_key)
 
 if __name__ == "__main__":
-    test()
+    asyncio.run(test())

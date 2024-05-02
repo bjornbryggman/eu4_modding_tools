@@ -215,3 +215,59 @@ Documentation agents:
 2. Exception agent
 3. Error handling agent
 """
+
+
+
+
+messages=[
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello!"}
+    ]
+
+def error_handler():""""
+This code:
+<code>
+
+</code>
+
+is being called with this code:
+
+<calling_function>
+
+</calling_function>
+
+However, the following error is generated:
+<error>
+
+</error>
+
+Reason step-by-step and produce a detailed analysis of why this might be so.
+
+Always start the answer with your thoughts first thinking through the request before you answer.
+"""
+
+def converter ():"""
+I have old LiteLLM generation code that I need to convert into standard OpenAI API format.
+
+The LiteLLM code follows the OpenAI API format in general anyway, so it should be simple enough.
+
+Here's the old code:
+<code>
+
+</code>
+
+And here's an example of a similar OpenAI function from their documentation:
+<example>
+
+</example>
+
+This example would have the following response:
+<example_response>
+
+</example_response>
+
+Reason step-by-step and first produce a list of what needs to be changed from my original code in order to fit the OpenAI API standard, then implement it directly.
+
+
+Always start the answer with your thoughts first thinking through the request before you select entities.
+"""
