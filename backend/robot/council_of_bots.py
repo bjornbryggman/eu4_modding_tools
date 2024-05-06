@@ -1,14 +1,17 @@
 import os
+
 import structlog
 from dotenv import load_dotenv
+
+from backend.api import litellm_text_generation
 from backend.core.config import DirectoryConfig
 from backend.utils import file_utils
-from backend.api import litellm_text_generation
 
 load_dotenv()
 os.environ["REPLICATE_API_TOKEN"] = os.getenv("REPLICATE_API_KEY")
 
 log = structlog.stdlib.get_logger(__name__)
+
 
 def AI_preprocessing(file_name: str = None):
     """
@@ -16,16 +19,19 @@ def AI_preprocessing(file_name: str = None):
 
     This function handles the overall workflow of the image processing pipeline.
     """
-
     config = DirectoryConfig()
 
     log.info("Initiating workflow...")
-    
+
     litellm_text_generation.validate_environment
-    
+
     try:
-        
-        for directory_path in [config.PNG_DIRECTORY, config.UPSCALED_DIRECTORY, config.RESIZED_DIRECTORY, config.OUTPUT_DIRECTORY]:
+        for directory_path in [
+            config.PNG_DIRECTORY,
+            config.UPSCALED_DIRECTORY,
+            config.RESIZED_DIRECTORY,
+            config.OUTPUT_DIRECTORY,
+        ]:
             file_utils.delete_directory(directory_path)
             file_utils.create_directory(directory_path)
 

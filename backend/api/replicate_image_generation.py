@@ -1,84 +1,168 @@
+# Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
+
+"""
+Replicate API client module.
+
+Asynchronous client for interacting with OpenRouter models.
+"""
+
 import asyncio
+from pathlib import Path
+from urllib.request import urlretrieve
+
 import replicate
 import structlog
-from pathlib import Path
 from replicate.exceptions import ReplicateError
 from requests import RequestException
-from urllib.request import urlretrieve
 
 log = structlog.stdlib.get_logger(__name__)
 
-def upscale_images(
-    input_directory: Path,
-    output_directory: Path,
-    input_format: str,
-    replicate_upscaling_model: str,
-):
+# ====================================================#
+#            Functions for image generation          #
+# ====================================================#
+
+
+def image_generation(image_model: str, input_params: dict, output_path: Path) -> None:
     """
-    Upscales images using the Replicate API.
+    Generates or modifies an existing image using the Replicate API.
 
     Args:
-    - input_directory: Path to the directory containing the images to be upscaled.
-    - output_directory: Path where the upscaled images will be stored.
-    - api_key: API key for the Replicate API.
+    ----
+    ----
+        - image_model (str): The name of the image model to use.
+        - input_params (dict): The input parameters for the image model.
+        - output_path (Path): The output path for the generated image.
 
     Returns:
-    - Upscaled PNG images.
+    -------
+    -------
+        - None.
+
+    Raises:
+    ------
+    ------
+        - RequestException: If an error occurs while making the request to the Replicate API.
+        - ReplicateError: If an error occurs while interacting with the Replicate API.
+        - ValueError: If an invalid input parameter is provided.
+        - TypeError: If an invalid data type is provided.
+        - OSError: If an I/O error occurs while processing the file.
+        - Exception: If an unexpected error occurs during the process execution.
     """
     try:
+        log.debug("Calling the Replicate API for processing...")
+        output = replicate.run(image_model, input=input_params)
 
-        for png_file in (input_directory.glob(f"*.{input_format}")):
-            output_path = output_directory / png_file.name
+        output_url = output if isinstance(output, str) else output["url"]
+        urlretrieve(output_url, output_path)
+        log.debug(f"Replicate request successful: {output_url}.")
 
-            try:
-                with open(png_file, "rb") as image_file:
-                    output = replicate.run(
-                        replicate_upscaling_model,
-                        input={
-                            "image": image_file,
-                            "scale": 2,
-                            "face_enhance": False,
-                        },
-                    )
+    except RequestException:
+        log.exception("Request to the Replicate API failed.")
+    except ReplicateError:
+        log.exception("There was a problem with the Replicate API.")
+    except ValueError:
+        log.exception("An invalid input parameter was provided.")
+    except TypeError:
+        log.exception("An invalid data type was provided.")
+    except OSError:
+        log.exception("An I/O error occurred during the process execution.")
+    except Exception:
+        log.exception("An unexpected error occurred during the process execution.")
 
-                    output_url = output if isinstance(output, str) else output["url"]
-                    urlretrieve(output_url, output_path)
-                log.info(f"Upscaled {png_file} via the Replicate API.")
 
-            except RequestException as error:
-                log.error(f"Error: {error}. Request to the Replicate API failed.")
-            except ReplicateError as error:
-                log.error(f"Failed to upscale {png_file} due to an error with the Replicate API: {error}")
-            except ValueError as error:
-                log.error(f"Invalid input when upscaling {png_file}: {str(error)}")
-            except TypeError as error:
-                log.error(f"Invalid data type when upscaling {png_file}: {str(error)}")
-            except OSError as error:
-                log.error(f"An I/O error occurred while upscaling {png_file}: {str(error)}")
+async def batch_image_generation(image_model: str, prompts: list[str], output_path: Path) -> None:
+    """
+    Generates batch images using the Replicate API.
 
-    except Exception as error:
-        log.error(f"An unexpected error occurred while upscaling {png_file}: {str(error)}")
+    Args:
+    ----
+    ----
+        - image_model (str): The name of the image model to use.
+        - prompts (list[str]): A list of prompts for the image model.
+        - output_path (Path): The output path for the generated images.
 
-async def batching():
-    # https://github.com/replicate/replicate-python
-    model_version = "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b"
-    prompts = [
-        f"A chariot pulled by a team of {count} rainbow unicorns"
-        for count in ["two", "four", "six", "eight"]
-    ]
+    Raises:
+    ------
+    ------
+        - RequestException: If an error occurs while making the request to the Replicate API.
+        - ReplicateError: If an error occurs while interacting with the Replicate API.
+        - ValueError: If an invalid input parameter is provided.
+        - TypeError: If an invalid data type is provided.
+        - OSError: If an I/O error occurs while processing the file.
+        - Exception: If an unexpected error occurs during the process execution.
+    """
+    try:
+        log.debug("Calling the Replicate API for batch image generation...")
+        async with asyncio.TaskGroup() as tg:
+            tasks = [tg.create_task(replicate.async_run(image_model, input={"prompt": prompt})) for prompt in prompts]
+        results = await asyncio.gather(*tasks)
 
-    async with asyncio.TaskGroup() as tg:
-        tasks = [
-            tg.create_task(replicate.async_run(model_version, input={"prompt": prompt}))
-            for prompt in prompts
-        ]
+        for i, result in enumerate(results):
+            output_url = result if isinstance(result, str) else result["url"]
+            image_path = output_path / f"{i}.png"
+            urlretrieve(output_url, image_path)
+            log.debug(f"Image generated: {image_path}")
 
-    results = await asyncio.gather(*tasks)
-    print(results)
+    except RequestException:
+        log.exception("Request to the Replicate API failed.")
+    except ReplicateError:
+        log.exception("There was a problem with the Replicate API.")
+    except ValueError:
+        log.exception("An invalid input parameter was provided.")
+    except TypeError:
+        log.exception("An invalid data type was provided.")
+    except OSError:
+        log.exception("An I/O error occurred during the process execution.")
+    except Exception:
+        log.exception("An unexpected error occurred during the process execution.")
 
-def pipelines():
-    laionide = replicate.models.get("afiaka87/laionide-v4").versions.get("b21cbe271e65c1718f2999b038c18b45e21e4fba961181fbfae9342fc53b9e05")
-    swinir = replicate.models.get("jingyunliang/swinir").versions.get("660d922d33153019e8c263a3bba265de882e7f4f70396546b6c9c8f9d47a021a")
-    image = laionide.predict(prompt="avocado armchair")
-    upscaled_image = swinir.predict(image=image)
-    return upscaled_image
+
+def replicate_pipeline(image_model: str, input_params: dict) -> bytes:
+    """
+    Runs a pipeline of Replicate API calls to process an image.
+
+    Sort the list in ascending order and return a copy of the
+    result using the bubble sort algorithm.
+
+    Args:
+    ----
+        image_model (str): The name of the image model to use.
+        input_params (dict): The input parameters for the image model.
+
+    Raises:
+    ------
+        RequestException: If an error occurs while making the request to the Replicate API.
+        ReplicateError: If an error occurs while interacting with the Replicate API.
+        ValueError: If an invalid input parameter is provided.
+        TypeError: If an invalid data type is provided.
+        Exception: If an unexpected error occurs during the process execution.
+
+    Returns:
+    -------
+        The processed image as bytes.
+    """
+    try:
+        log.debug("Calling the Replicate API for processing...")
+        laionide = replicate.models.get("afiaka87/laionide-v4").versions.get(
+            "b21cbe271e65c1718f2999b038c18b45e21e4fba961181fbfae9342fc53b9e05"
+        )
+        swinir = replicate.models.get("jingyunliang/swinir").versions.get(
+            "660d922d33153019e8c263a3bba265de882e7f4f70396546b6c9c8f9d47a021a"
+        )
+        image = laionide.predict(prompt="avocado armchair")
+        upscaled_image = swinir.predict(image=image)
+        log.debug("Replicate request successful.")
+
+    except RequestException:
+        log.exception("Request to the Replicate API failed.")
+    except ReplicateError:
+        log.exception("There was a problem with the Replicate API.")
+    except ValueError:
+        log.exception("An invalid input parameter was provided.")
+    except TypeError:
+        log.exception("An invalid data type was provided.")
+    except Exception:
+        log.exception("An unexpected error occurred during the process execution.")
+
+    else:
+        return upscaled_image

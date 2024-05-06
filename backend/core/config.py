@@ -1,13 +1,16 @@
-import structlog
 from pathlib import Path
 
+import structlog
+
 log = structlog.stdlib.get_logger(__name__)
+
 
 class DirectoryConfig:
     """
     Represents a configuration object.
 
     """
+
     def __init__(self):
         self.BASE_PATH = Path(__file__).resolve().parent.parent
         self.LOG_DIRECTORY = self.BASE_PATH / "logs"
