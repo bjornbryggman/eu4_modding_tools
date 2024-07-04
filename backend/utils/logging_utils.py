@@ -1,3 +1,20 @@
+# Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
+
+"""
+Utility module for initializing structured logging.
+
+This module provides a function to initialize a logger with structured logging
+capabilities using the structlog library. It supports both console and file
+logging with different formats for each.
+
+Typical usage example:
+
+  from logging_utils import init_logger
+  from pathlib import Path
+
+  init_logger(logging.INFO, Path("./logs"))
+"""
+
 import logging
 import sys
 from pathlib import Path
@@ -5,7 +22,29 @@ from pathlib import Path
 import structlog
 
 
-def init_logger(log_level=int, log_directory=Path):
+def init_logger(log_level: int, log_directory: Path) -> None:
+    """
+    Initializes a structured logger with console or file output.
+
+    This function sets up a logger with structlog, configuring it for either
+    console output (when running in a terminal) or file output (when not in a
+    terminal). Console output uses a human-friendly format, while file output
+    uses JSON format.
+
+    Args:
+    ----
+        log_level: An integer representing the logging level (e.g., logging.INFO).
+        log_directory: A Path object representing the directory where log files
+            will be stored if file logging is used.
+
+    Returns:
+    -------
+        None
+
+    Raises:
+    ------
+        OSError: If there's an issue creating the log directory or file.
+    """
     shared_processors = [
         structlog.stdlib.filter_by_level,
         structlog.stdlib.add_logger_name,
@@ -17,10 +56,11 @@ def init_logger(log_level=int, log_directory=Path):
     ]
 
     # Processors for console logging (human-friendly format)
-    console_processors = shared_processors + [structlog.processors.format_exc_info, structlog.dev.ConsoleRenderer()]
+    console_processors = [*shared_processors, structlog.processors.format_exc_info, structlog.dev.ConsoleRenderer()]
 
     # Processors for file logging (JSON format)
-    file_processors = shared_processors + [
+    file_processors = [
+        *shared_processors,
         structlog.processors.CallsiteParameterAdder({
             structlog.processors.CallsiteParameter.FUNC_NAME,
             structlog.processors.CallsiteParameter.LINENO,
