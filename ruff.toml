@@ -16,7 +16,7 @@ skip-magic-trailing-comma = true
 
 [lint]
 select = ["ALL", "D213", "D400", "D407", "D408", "D409", "UP"]
-ignore = ["D206", "D300", "D212", "D417", "COM812", "COM819","E111", "E114", "E117", "E265", "FBT", "ISC001", "ISC002", "Q000", "Q001", "Q002", "Q003", "W191"]
+ignore = ["D206", "D300", "D212", "D417", "COM812", "COM819","E111", "E114", "E117", "E265", "FBT", "ISC001", "ISC002", "S603", "Q000", "Q001", "Q002", "Q003", "W191"]
 fixable = ["ALL"]
 task-tags = ["TODO"]
 

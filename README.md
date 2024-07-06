@@ -1,3 +1,7 @@
+https://github.com/Microsoft/DirectXTex/wiki/Texconv 
+
+
+
 ```
 project_root/
 │
