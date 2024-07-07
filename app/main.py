@@ -1,9 +1,9 @@
 # Copyright 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-This script converts image files from DDS to PNG format, upscales them using AI, resize, and converts back to DDS format.
+This script converts image files from DDS to PNG format, then resizes and converts them back to DDS format.
 
-It also adjusts any relevant GUI files by the appropriate scaling factor.
+It also adjusts any relevant positional values in GUI files by an appropriate scaling factor.
 """
 
 import contextlib
@@ -13,9 +13,8 @@ from pathlib import Path
 import structlog
 from dotenv import load_dotenv
 
-from app.api import openrouter_text_generation, replicate_image_generation
 from app.config import DirectoryConfig
-from app.functions import gui_file_scaler, image_processing
+from app.functions import image_processing, text_processing
 from app.utils import file_utils, logging_utils
 
 log = structlog.stdlib.get_logger(__name__)
@@ -64,6 +63,9 @@ def main() -> None:
     image_processing.texconv_convert_images(
         config.WORKING_DIR_1440P, config.OUTPUT_DIR_1440P, config.ERROR_DIR, png_to_dds_options, "PNG", "DDS"
     )
+
+    text_processing.process_gui_files(config.INPUT_DIR, config.OUTPUT_DIR_2160P, "GUI", 1.4)
+    text_processing.process_gui_files(config.INPUT_DIR, config.OUTPUT_DIR_1440P, "GUI", 1.2)
 
     for directory_path in [config.WORKING_PNG_DIR, config.WORKING_DIR_1440P, config.WORKING_DIR_2160P]:
         file_utils.delete_directory(directory_path)

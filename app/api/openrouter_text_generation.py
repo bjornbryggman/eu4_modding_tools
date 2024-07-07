@@ -13,6 +13,7 @@ import requests
 import structlog
 from openai import AsyncOpenAI
 
+# Initialize logger for this module.
 log = structlog.stdlib.get_logger(__name__)
 
 
@@ -50,7 +51,7 @@ async def completion_request(prompt: list[dict], model: str, api_key: str, strea
     try:
         log.debug("Calling the OpenRouter API...")
 
-        # Makes a completion request to the OpenRouter API (using the OpenAI client).
+        # Make an asynchronous completion request to the OpenRouter API (using the OpenAI client).
         client = AsyncOpenAI()
         completion = await client.chat.completions.create(
             model=model,
@@ -60,7 +61,7 @@ async def completion_request(prompt: list[dict], model: str, api_key: str, strea
             extra_query={"transforms": {}, "min_p": {"value": 0.1}},
         )
 
-        # Streams the output as chunks if stream = True, then filters and appends them to the cohesive_text variable.
+        # Stream the output as chunks if stream = True, then filter and append it to the cohesive_text variable.
         if stream:
             chunks = []
             async for chunk in completion:
@@ -70,11 +71,11 @@ async def completion_request(prompt: list[dict], model: str, api_key: str, strea
                 chunks.append(part)
             cohesive_text = "".join(chunks)
 
-        # Filters the response into a readable format.
+        # Filter the response into a readable format.
         else:
             cohesive_text = completion.choices[0].message.content
 
-        # Calculates the cost of the API call.
+        # Calculate the cost of the API call.
         cost_and_stats = query_cost_and_stats(completion.id, api_key)
         total_cost = cost_and_stats.get("total_cost")
         formatted_string = f"${float(total_cost):.10f}"
@@ -121,16 +122,23 @@ def query_cost_and_stats(generation_id: str, api_key: str) -> dict:
         - requests.RequestException: If an error occurs while making the request to the OpenRouter API.
 
     """
+    # Construct the API URL with the generation ID.
     api_url = f"https://openrouter.ai/api/v1/generation?id={generation_id}"
+
+    # Set up the headers with the API key.
     headers = {"Authorization": f"Bearer {api_key}"}
 
     try:
+        # Make a GET request to the OpenRouter API.
         response = requests.get(api_url, headers=headers, timeout=10)
         response.raise_for_status()
+
+        # Extract the data from the JSON response.
         data = response.json().get("data")
 
     except requests.exceptions.RequestException:
         log.exception("HTTP Request to OpenRouter failed.")
 
     else:
+        # Return a dictionary with the total cost.
         return {"total_cost": data.get("total_cost")}

@@ -33,7 +33,7 @@ async def image_generation(image_model: str, input_params: dict) -> str:
     Returns:
     -------
     -------
-        - None.
+        - str: The URL of the generated or modified image.
 
     Raises:
     ------
@@ -48,8 +48,11 @@ async def image_generation(image_model: str, input_params: dict) -> str:
     """
     try:
         log.debug("Calling the Replicate API...")
+
+        # Make an asynchronous API call.
         output = await replicate.async_run(image_model, input=input_params)
 
+        # Extract the URL from the output.
         output_url = output if isinstance(output, str) else output["url"]
 
         log.debug("Replicate request successful: %s.", output_url)

@@ -4,6 +4,7 @@
 
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 import structlog
@@ -13,12 +14,99 @@ from wand.image import FILTER_TYPES, Image
 from app.api.replicate_image_generation import image_generation
 from app.utils.checks import check_for_texconv_path, check_for_wand_package
 
+# Initialize logger for this module.
 log = structlog.stdlib.get_logger(__name__)
 
 
 # ====================================================#
 #          Functions for converting images            #
 # ====================================================#
+
+
+def imagemagick_convert_images(
+    input_directory: Path, output_directory: Path, error_directory: Path, input_format: str, output_format: str
+) -> None:
+    """
+    Converts images from one format to another using Imagemagick (Wand implementation).
+
+    Args:
+    ----
+        input_directory (Path): The directory containing the input images to convert.
+        output_directory (Path): The directory where the converted images will be stored.
+        error_directory (Path): The directory where problematic images will be copied.
+        input_format (str): The format of the input images (e.g., "dds", "png").
+        output_format (str): The format of the output images (e.g., "png", "dds").
+
+    Raises:
+    ------
+        FileNotFoundError: If no images are found in the input directory.
+        FileOpenError: If an image cannot be opened.
+        CorruptImageError: If an image is corrupted.
+        WandError: If a Wand library error occurs.
+        OSError: If an I/O error occurs.
+        Exception: If an unexpected error occurs.
+
+    Returns:
+    -------
+        None.
+    """
+    # Check if the Wand package is available.
+    if not check_for_wand_package:
+        return
+
+    try:
+        log.info(
+            "Converting all %s files in %s to %s format...",
+            input_format.upper(),
+            input_directory,
+            output_format.upper(),
+        )
+
+        # Iterate through all files with the specified format in the input directory.
+        for input_file in input_directory.rglob(f"*.{input_format.lower()}"):
+
+            try:
+                # Calculate the relative output path to maintain directory structure.
+                relative_path = input_file.relative_to(input_directory)
+                output_path = output_directory / relative_path.parent
+                output_path.mkdir(parents=True, exist_ok=True)
+
+                # Convert the image using Wand.
+                with Image(filename=str(input_file)) as img:
+                    img.format = output_format
+                    img.save(filename=str(output_path))
+
+                log.debug("Successfully converted %s to %s.", input_file.name, output_format.upper())
+
+            # Handle corrupted image files.
+            except CorruptImageError as error:
+                log.exception(
+                    "Failed to read image file %s. It may be corrupted or in an unsupported format.",
+                    input_file,
+                    exc_info=error,
+                )
+
+                # Copy problematic file to error directory for manual processing.
+                error_directory.mkdir(parents=True, exist_ok=True)
+                error_path = error_directory / relative_path.parent
+                error_path.mkdir(parents=True, exist_ok=True)
+                shutil.copy(input_file, error_path)
+                continue
+
+        log.debug(
+            "Conversion complete. The converted %s files can be found in: %s", output_format.upper(), output_directory
+        )
+
+    except FileNotFoundError as error:
+        log.exception("No images found in input directory.", exc_info=error)
+    except FileOpenError as error:
+        log.exception("Failed to open file.", exc_info=error)
+    except WandError as error:
+        log.exception("Wand library error occurred.", exc_info=error)
+    except OSError as error:
+        log.exception("I/O error occurred.", exc_info=error)
+    except Exception as error:
+        log.exception("An unexpected error occurred.", exc_info=error)
 
 
 def texconv_convert_images(
@@ -51,6 +139,7 @@ def texconv_convert_images(
     -------
         None.
     """
+    # Check if Texconv is available.
     if not check_for_texconv_path:
         return
 
@@ -62,14 +151,16 @@ def texconv_convert_images(
             output_format.upper(),
         )
 
-        for input_file in input_directory.rglob(f"*.{input_format}"):
+        # Iterate through all files with the specified format in the input directory.
+        for input_file in input_directory.rglob(f"*.{input_format.lower()}"):
+
             try:
+                # Calculate the relative output path to maintain directory structure.
                 relative_path = input_file.relative_to(input_directory)
                 output_path = output_directory / relative_path.parent
-
-                # Ensures that the output directory exists.
                 output_path.mkdir(parents=True, exist_ok=True)
 
+                # Construct Texconv command.
                 texconv_command = [
                     "texconv",
                     *command_options,
@@ -80,87 +171,39 @@ def texconv_convert_images(
                     str(input_file),  # Input file.
                 ]
 
+                # Run Texconv command.
                 subprocess.run(texconv_command, check=True, capture_output=True, text=True)
                 log.debug("Successfully converted %s to %s.", input_file.name, output_format.upper())
 
+            # Fallback to using Imagemagick in case of problems.
             except subprocess.CalledProcessError as error:
-                log.exception("Failed to convert image file %s due to Texconv error.", input_file, exc_info=error)
-
-                # Copies problematic file to error directory for manual processing.
-                error_directory.mkdir(parents=True, exist_ok=True)
-                shutil.copy(input_file, error_directory)
-                continue
-
-        log.debug(
-            "Conversion complete. The converted %s files can be found in: %s", output_format.upper(), output_directory
-        )
-
-    except FileNotFoundError as error:
-        log.exception("No images found in input directory.", exc_info=error)
-    except OSError as error:
-        log.exception("I/O error occurred.", exc_info=error)
-    except Exception as error:
-        log.exception("An unexpected error occurred.", exc_info=error)
-
-
-def imagemagick_convert_images(
-    input_directory: Path, output_directory: Path, error_directory: Path, input_format: str, output_format: str
-) -> None:
-    """
-    Converts images from one format to another using Imagemagick (Wand implementation).
-
-    Args:
-    ----
-        input_directory (Path): The directory containing the input images to convert.
-        output_directory (Path): The directory where the converted images will be stored.
-        input_format (str): The format of the input images (e.g., "dds", "png").
-        output_format (str): The format of the output images (e.g., "png", "dds").
-
-    Raises:
-    ------
-        FileNotFoundError: If no images are found in the input directory.
-        FileOpenError: If an image cannot be opened.
-        CorruptImageError: If an image is corrupted.
-        WandError: If a Wand library error occurs.
-        OSError: If an I/O error occurs.
-        Exception: If an unexpected error occurs.
-
-    Returns:
-    -------
-        None.
-    """
-    if not check_for_wand_package:
-        return
-
-    try:
-        log.info(
-            "Converting all %s files in %s to %s format...",
-            input_format.upper(),
-            input_directory,
-            output_format.upper(),
-        )
-
-        for input_file in input_directory.rglob(f"*.{input_format}"):
-            try:
-                relative_path = input_file.relative_to(input_directory)
-                output_path = output_directory / relative_path.with_suffix(f".{output_format.lower()}")
-                output_path.parent.mkdir(parents=True, exist_ok=True)
-
-                with Image(filename=str(input_file)) as img:
-                    img.format = output_format
-                    img.save(filename=str(output_path))
-                log.debug("Successfully converted %s to %s.", input_file.name, output_format.upper())
-
-            except CorruptImageError as error:
                 log.exception(
-                    "Failed to read image file %s. It may be corrupted or in an unsupported format.",
-                    input_file,
-                    exc_info=error,
+                    "Texconv failed to convert %s. Attempting Imagemagick fallback.", input_file, exc_info=error
                 )
-                # Copies problematic file to error directory for manual processing.
-                error_directory.mkdir(parents=True, exist_ok=True)
-                shutil.copy(input_file, error_directory)
-                continue
+
+                # Create a temporary directory.
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    temp_dir_path = Path(temp_dir)
+
+                    # Copy the problematic file to the temporary directory.
+                    temp_file = temp_dir_path / input_file.name
+                    shutil.copy(input_file, temp_file)
+
+                    try:
+                        # Call the Imagemagick function.
+                        imagemagick_convert_images(
+                            input_directory=temp_dir_path,
+                            output_directory=output_path,
+                            error_directory=error_directory,
+                            input_format=input_format,
+                            output_format=output_format,
+                        )
+
+                        log.debug("Imagemagick successfully converted %s.", input_file.name)
+
+                    except Exception as error:
+                        log.exception("Both Texconv and Imagemagick failed to convert %s.", input_file, exc_info=error)
+                        continue
 
         log.debug(
             "Conversion complete. The converted %s files can be found in: %s", output_format.upper(), output_directory
@@ -168,10 +211,6 @@ def imagemagick_convert_images(
 
     except FileNotFoundError as error:
         log.exception("No images found in input directory.", exc_info=error)
-    except FileOpenError as error:
-        log.exception("Failed to open file.", exc_info=error)
-    except WandError as error:
-        log.exception("Wand library error occurred.", exc_info=error)
     except OSError as error:
         log.exception("I/O error occurred.", exc_info=error)
     except Exception as error:
@@ -210,6 +249,7 @@ def imagemagick_resize_images(
     -------
         None.
     """
+    # Check if the Wand package is available.
     if not check_for_wand_package:
         return
 
@@ -222,11 +262,15 @@ def imagemagick_resize_images(
             chosen_filter,
         )
 
-        for input_file in input_directory.rglob(f"*.{input_format}"):
+        # Iterate through all files with the specified format in the input directory.
+        for input_file in input_directory.rglob(f"*.{input_format.lower()}"):
+
+            # Calculate the relative output path to maintain directory structure.
             relative_path = input_file.relative_to(input_directory)
             output_path = output_directory / relative_path
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
+            # # Open the image, resize it, and save it to the output path.
             with Image(filename=str(input_file)) as img:
                 img.resize(
                     int(img.width * scaling_factor),
@@ -296,7 +340,7 @@ def replicate_images(
     try:
         log.info("Upscaling all %s files in %s...", input_format.upper(), input_directory)
 
-        for file in input_directory.glob(f"*.{input_format}"):
+        for file in input_directory.glob(f"*.{input_format.lower()}"):
             output_path = output_directory / file.name
 
             with Path.open(file, "rb") as image_file:

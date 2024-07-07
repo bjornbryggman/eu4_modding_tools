@@ -35,8 +35,8 @@ def read_file(file_path: Path) -> str:
 
     """
     try:
-        with file_path.open("r") as file:
-            file.read()
+        with file_path.open("r", encoding="utf-8") as file:
+            return file.read()
 
     except FileNotFoundError as error:
         log.exception("No file found.", exc_info=error)
@@ -67,7 +67,7 @@ def write_file(file_path: Path, content: str) -> None:
     OSError: If an I/O error occurs while writing to the file.
     """
     try:
-        with file_path.open("w") as file:
+        with file_path.open("w", encoding="utf-8") as file:
             file.write(content)
 
     except PermissionError as error:

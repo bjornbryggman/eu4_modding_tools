@@ -17,7 +17,7 @@ class DirectoryConfig:
         self.ROOT_PATH = Path(__file__).resolve().parent.parent
         self.LOG_DIR = self.ROOT_PATH / "logs"
         self.LOG_LEVEL = "DEBUG"
-        self.INPUT_DIR = self.ROOT_PATH / "resources" / "input"
+        self.INPUT_DIR = self.ROOT_PATH / "resources" / "input_files"
 
         # Working directories.
         self.WORKING_PNG_DIR = self.ROOT_PATH / "resources" / "png_files"
