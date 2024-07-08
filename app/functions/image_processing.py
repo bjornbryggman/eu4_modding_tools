@@ -64,7 +64,6 @@ def imagemagick_convert_images(
 
         # Iterate through all files with the specified format in the input directory.
         for input_file in input_directory.rglob(f"*.{input_format.lower()}"):
-
             try:
                 # Calculate the relative output path to maintain directory structure.
                 relative_path = input_file.relative_to(input_directory)
@@ -153,7 +152,6 @@ def texconv_convert_images(
 
         # Iterate through all files with the specified format in the input directory.
         for input_file in input_directory.rglob(f"*.{input_format.lower()}"):
-
             try:
                 # Calculate the relative output path to maintain directory structure.
                 relative_path = input_file.relative_to(input_directory)
@@ -264,7 +262,6 @@ def imagemagick_resize_images(
 
         # Iterate through all files with the specified format in the input directory.
         for input_file in input_directory.rglob(f"*.{input_format.lower()}"):
-
             # Calculate the relative output path to maintain directory structure.
             relative_path = input_file.relative_to(input_directory)
             output_path = output_directory / relative_path

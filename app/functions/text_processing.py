@@ -48,7 +48,6 @@ def process_gui_files(input_directory: Path, output_directory: Path, input_forma
     """
     log.info("Processing GUI files in %s with scale factor %s...", input_directory, scale_factor)
 
-
     def scale_value(match: re.Match) -> str:
         """
         Scales a matched value according to the scaling factor.
@@ -64,7 +63,6 @@ def process_gui_files(input_directory: Path, output_directory: Path, input_forma
         prop, value = match.group(1), float(match.group(2))
         scaled_value = round(value * scale_factor)
         return f"{prop} = {scaled_value}"
-
 
     def process_content(content: str) -> str:
         """
@@ -82,11 +80,9 @@ def process_gui_files(input_directory: Path, output_directory: Path, input_forma
         pattern = r"(\bx\b|\by\b|maxWidth|maxHeight) *= *(-?\d+(?:\.\d+)?)"
         return re.sub(pattern, scale_value, content)
 
-
     try:
         # Iterate through all files with the specified format in the input directory.
         for gui_file in input_directory.rglob(f"*.{input_format.lower()}"):
-
             # Calculate the relative output path to maintain directory structure.
             relative_path = gui_file.relative_to(input_directory)
             output_path = output_directory / relative_path.parent
