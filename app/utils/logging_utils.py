@@ -1,18 +1,10 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Utility module for initializing structured logging.
+This module provides a utility function for configuring logging.
 
-This module provides a function to initialize a logger with structured logging
-capabilities using the structlog library. It supports both console and file
-logging with different formats for each.
-
-Typical usage example:
-
-  from logging_utils import init_logger
-  from pathlib import Path
-
-  init_logger(logging.INFO, Path("./logs"))
+It sets up a logger with structured logging capabilities using the structlog library
+and supports both console and file logging with different formats for each.
 """
 
 import logging
@@ -61,11 +53,13 @@ def init_logger(log_level: int, log_directory: Path) -> None:
     # Processors for file logging (JSON format)
     file_processors = [
         *shared_processors,
-        structlog.processors.CallsiteParameterAdder({
-            structlog.processors.CallsiteParameter.FUNC_NAME,
-            structlog.processors.CallsiteParameter.LINENO,
-            structlog.processors.CallsiteParameter.PROCESS,
-        }),
+        structlog.processors.CallsiteParameterAdder(
+            {
+                structlog.processors.CallsiteParameter.FUNC_NAME,
+                structlog.processors.CallsiteParameter.LINENO,
+                structlog.processors.CallsiteParameter.PROCESS,
+            }
+        ),
         structlog.processors.dict_tracebacks,
         structlog.processors.JSONRenderer(),
     ]

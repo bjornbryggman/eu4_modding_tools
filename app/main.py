@@ -48,7 +48,7 @@ def main() -> None:
 
     dds_to_png_options = ["-y", "-wiclossless"]  # Overwrites files and enables lossless conversion to PNG.
     image_processing.texconv_convert_images(
-        config.INPUT_DIR, config.WORKING_PNG_DIR, config.ERROR_DIR, dds_to_png_options, "DDS", "PNG"
+       config.INPUT_DIR, config.WORKING_PNG_DIR, config.ERROR_DIR, dds_to_png_options, "DDS", "PNG"
     )
 
     image_processing.imagemagick_resize_images(config.WORKING_PNG_DIR, config.WORKING_DIR_2160P, "PNG", 2.0, "SINC")
@@ -64,8 +64,11 @@ def main() -> None:
         config.WORKING_DIR_1440P, config.OUTPUT_DIR_1440P, config.ERROR_DIR, png_to_dds_options, "PNG", "DDS"
     )
 
-    text_processing.process_gui_files(config.INPUT_DIR, config.OUTPUT_DIR_2160P, "GUI", 1.4)
-    text_processing.process_gui_files(config.INPUT_DIR, config.OUTPUT_DIR_1440P, "GUI", 1.2)
+    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2160P, "GUI", 1.4)
+    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2160P, "GFX", 1.4)
+
+    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_1440P, "GUI", 1.2)
+    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_1440P, "GFX", 1.2)
 
     for directory_path in [config.WORKING_PNG_DIR, config.WORKING_DIR_1440P, config.WORKING_DIR_2160P]:
         file_utils.delete_directory(directory_path)
