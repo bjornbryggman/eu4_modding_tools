@@ -10,7 +10,6 @@ import multiprocessing
 import shutil
 import subprocess
 import sys
-import tempfile
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -24,76 +23,12 @@ from app.utils.checks import check_for_texconv_path, check_for_wand_package
 log = structlog.stdlib.get_logger(__name__)
 
 
-# =======================================================#
-#        Worker functions for parallel processing        #
-# =======================================================#
+# ====================================================#
+#        Worker function for converting images        #
+# ====================================================#
 
 
-def imagemagick_convert_worker(args: tuple) -> None:
-    """
-    Worker function for parallel image conversion using Imagemagick (Wand implementation).
-
-    Args:
-    ----
-    - args (tuple): A tuple containing the following arguments:
-        - input_file (Path): The input image file.
-        - input_directory (Path): The directory containing the input images.
-        - output_directory (Path): The directory where the converted images will be saved.
-        - error_directory (Path): The directory where problematic files will be copied.
-        - output_format (str): The desired output format.
-
-    Returns:
-    -------
-    - None.
-
-    Raises:
-    ------
-    - CorruptImageError: If an image is corrupted.
-    - PermissionError: If there's a permission issue when accessing files.
-    - FileOpenError: If an image cannot be opened.
-    - WandError: If a Wand library error occurs.
-    - OSError: If an I/O error occurs.
-    - Exception: If an unexpected error occurs.
-    """
-    input_file, input_directory, output_directory, error_directory, output_format = args
-
-    try:
-        # Calculate the relative output path to maintain directory structure.
-        relative_path = input_file.relative_to(input_directory)
-        output_path = output_directory / relative_path.parent
-        output_path.mkdir(parents=True, exist_ok=True)
-
-        # Convert the image using Imagemagick (Wand implementation).
-        with Image(filename=str(input_file)) as img:
-            img.format = output_format
-            img.save(filename=str(output_path))
-
-        log.debug("Successfully converted %s to %s.", input_file.name, output_format.upper())
-
-    # Handle corrupted image files.
-    except CorruptImageError as error:
-        log.exception(
-            "Failed to read image file %s.", input_file, exc_info=error)
-
-        # Copy problematic file to error directory for manual processing.
-        error_directory.mkdir(parents=True, exist_ok=True)
-        error_path = error_directory / relative_path.parent
-        error_path.mkdir(parents=True, exist_ok=True)
-        shutil.copy(input_file, error_path)
-        raise
-
-    except PermissionError as error:
-        log.exception("Permission denied when accessing file: %s", input_file, exc_info=error)
-        sys.exit()
-    except (FileOpenError, WandError, OSError) as error:
-        log.exception("Error processing %s.", input_file, exc_info=error)
-        raise
-    except Exception as error:
-        log.exception("Unexpected error processing %s.", input_file, exc_info=error)
-        raise
-
-
-def texconv_convert_worker(args: tuple) -> None:
+def image_conversion_worker(args: tuple) -> None:
     """
     Worker function for image conversion using Texconv.
 
@@ -121,7 +56,7 @@ def texconv_convert_worker(args: tuple) -> None:
     - OSError: If an I/O error occurs.
     - Exception: If an unexpected error occurs.
     """
-    input_file, input_directory, output_directory, error_directory, command_options, input_format, output_format = args
+    input_file, input_directory, output_directory, error_directory, command_options, output_format = args
 
     try:
         # Calculate the relative output path to maintain directory structure.
@@ -148,42 +83,40 @@ def texconv_convert_worker(args: tuple) -> None:
     except subprocess.CalledProcessError as error:
         log.exception("Texconv failed to convert %s. Attempting Imagemagick fallback.", input_file, exc_info=error)
 
-        # Create a temporary directory.
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_dir_path = Path(temp_dir)
+        try:
+            # Convert the image using Imagemagick (Wand implementation).
+            with Image(filename=str(input_file)) as img:
+                img.format = output_format
+                img.save(filename=str(output_path))
+            log.debug("Successfully converted %s to %s using Imagemagick.", input_file.name, output_format.upper())
 
-            # Copy the problematic file to the temporary directory.
-            temp_file = temp_dir_path / input_file.name
-            shutil.copy(input_file, temp_file)
+        # Copy problematic file to error directory for manual processing as a last resort.
+        except CorruptImageError as error:
+            log.exception("Failed to read image file %s.", input_file, exc_info=error)
 
-            try:
-                # Call the Imagemagick function.
-                imagemagick_convert_images(
-                    input_directory=temp_dir_path,
-                    output_directory=output_path,
-                    error_directory=error_directory,
-                    input_format=input_format,
-                    output_format=output_format,
-                )
+            error_directory.mkdir(parents=True, exist_ok=True)
+            error_path = error_directory / relative_path.parent
+            error_path.mkdir(parents=True, exist_ok=True)
+            shutil.copy(input_file, error_path)
 
-                log.debug("Imagemagick successfully converted %s.", input_file.name)
-
-            except Exception as error:
-                log.exception("Both Texconv and Imagemagick failed to convert %s.", input_file, exc_info=error)
-                raise
+        except Exception as error:
+            log.exception("Both Texconv and Imagemagick failed to convert %s.", input_file, exc_info=error)
 
     except PermissionError as error:
         log.exception("Permission denied when accessing file: %s", input_file, exc_info=error)
         sys.exit()
     except (FileOpenError, WandError, OSError) as error:
         log.exception("Error processing %s.", input_file, exc_info=error)
-        raise
     except Exception as error:
         log.exception("Unexpected error processing %s.", input_file, exc_info=error)
-        raise
 
 
-def imagemagick_resize_worker(args: tuple) -> None:
+# ==================================================#
+#        Worker function for resizing images        #
+# ==================================================#
+
+
+def image_resizing_worker(args: tuple) -> None:
     """
     Worker function for image resizing using Imagemagick.
 
@@ -234,70 +167,18 @@ def imagemagick_resize_worker(args: tuple) -> None:
         sys.exit()
     except CorruptImageError as error:
         log.exception("Failed to read image file %s.", input_file, exc_info=error)
-        raise
     except (FileOpenError, WandError, OSError) as error:
         log.exception("Error processing %s.", input_file, exc_info=error)
-        raise
     except Exception as error:
         log.exception("Unexpected error processing %s.", input_file, exc_info=error)
-        raise
 
 
 # ====================================================#
-#           Functions for converting images           #
+#        Caller function for converting images        #
 # ====================================================#
 
 
-def imagemagick_convert_images(
-    input_directory: Path, output_directory: Path, error_directory: Path, input_format: str, output_format: str
-) -> None:
-    """
-    Converts images from one format to another using Imagemagick (Wand implementation).
-
-    Args:
-    ----
-    - input_directory (Path): The directory containing the input images to convert.
-    - output_directory (Path): The directory where the converted images will be stored.
-    - error_directory (Path): The directory where problematic images will be copied.
-    - input_format (str): The format of the input images (e.g., "dds", "png").
-    - output_format (str): The format of the output images (e.g., "png", "dds").
-
-    Returns:
-    -------
-    - None.
-
-    Raises:
-    ------
-    - FileNotFoundError: If no images are found in the input directory.
-    - Exception: If an unexpected error occurs.
-    """
-    # Check if the Wand package is available.
-    if not check_for_wand_package:
-        return
-
-    try:
-        # Use a ProcessPoolExecutor to run the worker function in parallel.
-        input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
-
-        with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
-            args = [
-                (input_file, input_directory, output_directory, error_directory, output_format)
-                for input_file in input_files
-            ]
-            futures = list(executor.map(imagemagick_convert_worker, args, chunksize=10))
-
-            # Consume the iterator to trigger any exceptions.
-            for _ in futures:
-                pass
-
-    except FileNotFoundError as error:
-        log.exception("No %s files found in %s.", input_format.upper(), input_directory, exc_info=error)
-        sys.exit()
-    except Exception as error:
-        log.exception("An unexpected error occurred.", exc_info=error)
-        raise
-
-def texconv_convert_images(
+def image_conversion(
     input_directory: Path,
     output_directory: Path,
     error_directory: Path,
@@ -306,7 +187,7 @@ def texconv_convert_images(
     output_format: str,
 ) -> None:
     """
-    Converts images from one format to another using Texconv.
+    Converts images from one format to another using Texconv, with Imagemagick as a fallback.
 
     Args:
     ----
@@ -347,12 +228,11 @@ def texconv_convert_images(
                     output_directory,
                     error_directory,
                     command_options,
-                    input_format,
                     output_format,
                 )
                 for input_file in input_files
             ]
-            futures = list(executor.map(texconv_convert_worker, args, chunksize=10))
+            futures = list(executor.map(image_conversion_worker, args, chunksize=10))
 
             # Consume the iterator to trigger any exceptions.
             for _ in futures:
@@ -363,15 +243,14 @@ def texconv_convert_images(
         sys.exit()
     except Exception as error:
         log.exception("An unexpected error occurred.", exc_info=error)
-        raise
 
 
-# =====================================================#
-#             Function for resizing images             #
-# =====================================================#
+#=====================================================#
+#         Caller function for resizing images         #
+#=====================================================#
 
 
-def imagemagick_resize_images(
+def image_resizing(
     input_directory: Path, output_directory: Path, input_format: str, scaling_factor: float, chosen_filter: str
 ) -> None:
     """
@@ -415,7 +294,7 @@ def imagemagick_resize_images(
                 (input_file, input_directory, output_directory, scaling_factor, chosen_filter)
                 for input_file in input_files
             ]
-            futures = list(executor.map(imagemagick_resize_worker, args, chunksize=10))
+            futures = list(executor.map(image_resizing_worker, args, chunksize=10))
 
             # Consume the iterator to trigger any exceptions.
             for _ in futures:
@@ -429,4 +308,3 @@ def imagemagick_resize_images(
         sys.exit()
     except Exception as error:
         log.exception("An unexpected error occurred.", exc_info=error)
-        raise
