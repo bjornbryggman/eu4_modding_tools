@@ -13,8 +13,8 @@ from pathlib import Path
 import structlog
 from dotenv import load_dotenv
 
-from app.config import DirectoryConfig
-from app.functions import image_processing, text_processing
+from app.core.config import DirectoryConfig
+from app.functions import image_processing, text_processing_backup
 from app.utils import file_utils, logging_utils
 
 log = structlog.stdlib.get_logger(__name__)
@@ -106,12 +106,12 @@ def text_positional_value_scaling() -> None:
     log.info("Initiating text processing (scaling) workflow...")
 
     # Scale positional values in GUI and GFX text files (for 4K monitors).
-    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_4K, "GUI", 1.4)
-    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_4K, "GFX", 1.4)
+    text_processing_backup.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_4K, "GUI", 1.4)
+    text_processing_backup.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_4K, "GFX", 1.4)
 
     # Scale positional values in GUI and GFX text files (for 2K monitors).
-    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2K, "GUI", 1.2)
-    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2K, "GFX", 1.2)
+    text_processing_backup.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2K, "GUI", 1.2)
+    text_processing_backup.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2K, "GFX", 1.2)
 
 
 # Used to derive an appropriate scaling factor by comparing how other mods (e.g., "Proper 2K UI") did it.
@@ -120,12 +120,8 @@ def text_positional_value_comparison() -> None:
     log.info("Initiating text processing (scaling) workflow...")
 
     # Compares positional values between text files (for 4K monitors).
-    text_processing.calculate_scaling_factors(
-        config.TEXT_COMPARISON_ORIGINAL_DIR,
-        config.TEXT_COMPARISON_DIR_2K,
-        config.TEXT_COMPARISON_DIR_4K,
-        "GUI",
-        config.TEXT_COMPARISON_DIR,
+    text_processing_backup.calculate_scaling_factors(
+        config.TEXT_COMPARISON_ORIGINAL_DIR, config.TEXT_COMPARISON_DIR_2K, config.TEXT_COMPARISON_DIR_4K, "GUI"
     )
 
 

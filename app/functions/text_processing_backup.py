@@ -15,9 +15,7 @@ from pathlib import Path
 from statistics import mean, median, stdev
 
 import structlog
-from sqlmodel import Session, select
 
-from app.core.db import File, OriginalValue, Property, ScalingFactor, engine
 from app.utils import file_utils
 
 # Initialize logger for this module.
@@ -203,13 +201,13 @@ def scale_positional_values(
 # ==============================================================#
 
 
-def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
+def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> tuple[str, dict[str, any]]:
     """
-    Worker function for calculating scaling factors for a single text file and storing them in the database.
+    Worker function for calculating scaling factors for a single text file.
 
     This function compares positional values in an original text file with its 2K and 4K
-    scaled versions. It calculates scaling factors for individual properties and stores
-    them in the database.
+    scaled versions. It calculates scaling factors for individual properties and overall
+    scaling factors for each resolution.
 
     Args:
     ----
@@ -220,7 +218,9 @@ def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
 
     Returns:
     -------
-    - None
+    - tuple[str, dict[str, any]]: A tuple containing:
+        - The name of the original file.
+        - A dictionary with scaling factor information for 2K and 4K versions.
 
     Raises:
     ------
@@ -228,166 +228,124 @@ def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
     """
     original_file, scaled_2k_file, scaled_4k_file = args
 
-    try:
-        # Check if all relevant files exist, skip if any are missing.
-        if not all(file.exists() for file in [original_file, scaled_2k_file, scaled_4k_file]):
-            log.warning("Skipping %s due to missing files.", original_file.name)
-            return
+    # Regular expression to match positional properties and their values.
+    pattern = r"(\b(?:x|y|width|height|maxWidth|maxHeight|size|borderSize|spacing|position|pos_x)\b)\s*=\s*({[^}]+}|-?\d+(?:\.\d+)?%?|[^}\n]+)"
 
-        # Extract positional values from each file.
-        original_values = extract_positional_values(original_file)
-        scaled_2k_values = extract_positional_values(scaled_2k_file)
-        scaled_4k_values = extract_positional_values(scaled_4k_file)
+    # Check if all relevant files exist, skip if any are missing.
+    if not all(file.exists() for file in [original_file, scaled_2k_file, scaled_4k_file]):
+        log.warning("Skipping %s due to missing files.", original_file.name)
+        return original_file.name, None
+
+    def extract_values(content: str) -> dict[str, list[float]]:
+        """
+        Extracts positional values from the content of a text file.
+
+        Args:
+        ----
+        - content (str): The content of the text file.
+
+        Returns:
+        -------
+        - dict[str, list[float]]: A dictionary where keys are property names and values
+        are lists of corresponding positional values.
+        """
+        values = {}
+        for match in re.finditer(pattern, content, re.IGNORECASE):
+            # Extract property name and value.
+            prop, value = match.groups()
+            # If value is a digit, add it to the dictionary.
+            if value.isdigit():
+                if prop not in values:
+                    values[prop] = []
+                values[prop].append(float(value))
+        return values
+
+    def safe_mean(data: list) -> float:
+        """
+        Calculates the mean of a list, handling empty lists gracefully.
+
+        Args:
+        ----
+        - data (list): The list of values.
+
+        Returns:
+        -------
+        - float: The mean of the list, or None if the list is empty.
+        """
+        return mean(data) if data else None
+
+    try:
+        # Read content from original and scaled files.
+        original_content = file_utils.read_file(original_file)
+        scaled_2k_content = file_utils.read_file(scaled_2k_file)
+        scaled_4k_content = file_utils.read_file(scaled_4k_file)
 
         # Check if any content is None, skip if so.
-        if any(values is None for values in [original_values, scaled_2k_values, scaled_4k_values]):
+        if any(content is None for content in [original_content, scaled_2k_content, scaled_4k_content]):
             log.warning("Skipping file %s due to missing content in one or more versions.", original_file)
-            return
+            return original_file.name, None
+
+        # Extract positional values from each file.
+        original_values = extract_values(original_content)
+        scaled_2k_values = extract_values(scaled_2k_content)
+        scaled_4k_values = extract_values(scaled_4k_content)
+
+        def calculate_property_scaling(
+            original: dict[str, list[float]], scaled: dict[str, list[float]]
+        ) -> dict[str, dict[str, float]]:
+            """
+            Calculates scaling factors for individual properties.
+
+            Args:
+            ----
+            - original (dict[str, list[float]]): Positional values from the original file.
+            - scaled (dict[str, list[float]]): Positional values from the scaled file.
+
+            Returns:
+            -------
+            - dict[str, dict[str, float]]: A dictionary where keys are property names and
+            values are dictionaries containing scaling factor statistics (mean, median,
+            standard deviation, minimum, maximum).
+            """
+            scaling = {}
+            for prop in original:
+                # Check if the property exists in both original and scaled values.
+                if prop in scaled and len(original[prop]) == len(scaled[prop]):
+                    # Calculate scaling factors for each property.
+                    factors = [s / o for o, s in zip(original[prop], scaled[prop], strict=True) if o != 0]
+
+                    # If factors are found, calculate statistics.
+                    if factors:
+                        scaling[prop] = {
+                            "mean": mean(factors),
+                            "median": median(factors),
+                            "std_dev": stdev(factors) if len(factors) > 1 else 0,
+                            "min": min(factors),
+                            "max": max(factors),
+                        }
+
+                    # Otherwise, set all statistics to None.
+                    else:
+                        scaling[prop] = {"mean": None, "median": None, "std_dev": None, "min": None, "max": None}
+            return scaling
 
         # Calculate scaling factors for 2K and 4K resolutions.
         scale_2k = calculate_property_scaling(original_values, scaled_2k_values)
         scale_4k = calculate_property_scaling(original_values, scaled_4k_values)
 
-        # Store results in the database
-        store_scaling_factors_in_database(original_file, original_values, scale_2k, scale_4k)
+        # Calculate overall scaling factors for 2K and 4K.
+        overall_2k = safe_mean([v["mean"] for v in scale_2k.values() if v["mean"] is not None])
+        overall_4k = safe_mean([v["mean"] for v in scale_4k.values() if v["mean"] is not None])
 
-        log.info("Stored scaling factors for %s in the database.", original_file.name)
+        # Return the file name and the scaling factors for 2K and 4K.
+        return original_file.name, {
+            "2K": {"overall": round(overall_2k, 2) if overall_2k is not None else None, "properties": scale_2k},
+            "4K": {"overall": round(overall_4k, 2) if overall_4k is not None else None, "properties": scale_4k},
+        }
 
     except Exception as error:
-        log.exception("An unexpected error occurred.", exc_info=error)
-
-
-def extract_positional_values(file_path: Path) -> dict[str, list[float]]:
-    """
-    Extracts positional values from the content of a text file.
-
-    Args:
-    ----
-    - content (str): The content of the text file.
-
-    Returns:
-    -------
-    - dict[str, list[float]]: A dictionary where keys are property names and values
-    are lists of corresponding positional values.
-    """
-    values = {}
-    pattern = r"(\b(?:x|y|width|height|maxWidth|maxHeight|size|borderSize|spacing|position|pos_x)\b)\s*=\s*({[^}]+}|-?\d+(?:\.\d+)?%?|[^}\n]+)"
-
-    content = file_utils.read_file(file_path)
-    if content is None:
-        return None
-
-    for match in re.finditer(pattern, content, re.IGNORECASE):
-        # Extract property name and value.
-        prop, value = match.groups()
-        # If value is a digit, add it to the dictionary.
-        if value.isdigit():
-            if prop not in values:
-                values[prop] = []
-            values[prop].append(float(value))
-    return values
-
-
-def calculate_property_scaling(
-    original: dict[str, list[float]], scaled: dict[str, list[float]]
-) -> dict[str, dict[str, float]]:
-    """
-    Calculates scaling factors for individual properties.
-
-    Args:
-    ----
-    - original (dict[str, list[float]]): Positional values from the original file.
-    - scaled (dict[str, list[float]]): Positional values from the scaled file.
-
-    Returns:
-    -------
-    - dict[str, dict[str, float]]: A dictionary where keys are property names and
-    values are dictionaries containing scaling factor statistics (mean, median,
-    standard deviation, minimum, maximum).
-    """
-    scaling = {}
-    for prop in original:
-        # Check if the property exists in both original and scaled values.
-        if prop in scaled and len(original[prop]) == len(scaled[prop]):
-            # Calculate scaling factors for each property.
-            factors = [s / o for o, s in zip(original[prop], scaled[prop], strict=True) if o != 0]
-
-            # If factors are found, calculate statistics.
-            if factors:
-                scaling[prop] = {
-                    "mean": mean(factors),
-                    "median": median(factors),
-                    "std_dev": stdev(factors) if len(factors) > 1 else 0,
-                    "min": min(factors),
-                    "max": max(factors),
-                }
-
-            # Otherwise, set all statistics to None.
-            else:
-                scaling[prop] = {"mean": None, "median": None, "std_dev": None, "min": None, "max": None}
-    return scaling
-
-
-def store_scaling_factors_in_database(
-    original_file: Path,
-    original_values: dict[str, list[float]],
-    scale_2k: dict[str, dict[str, float]],
-    scale_4k: dict[str, dict[str, float]],
-) -> None:
-    """
-    Stores original values and scaling factors in the database.
-
-    Args:
-    ----
-    - original_file (Path): Path to the original text file.
-    - original_values (dict[str, list[float]]): Original positional values for the file.
-    - scale_2k (dict[str, dict[str, float]]): Scaling factors for 2K resolution.
-    - scale_4k (dict[str, dict[str, float]]): Scaling factors for 4K resolution.
-
-    Returns:
-    -------
-    - None
-    """
-    with Session(engine) as session:
-        # Create or get the File record
-        file_record = session.exec(select(File).where(File.path == str(original_file))).first()
-        if not file_record:
-            file_record = File(filename=original_file.name, path=str(original_file))
-            session.add(file_record)
-            session.commit()
-            session.refresh(file_record)
-
-        # Store original values and scaling factors for each property
-        for prop, values in original_values.items():
-            property_record = Property(name=prop, file_id=file_record.id)
-            session.add(property_record)
-            session.commit()
-            session.refresh(property_record)
-
-            # Store original values
-            for value in values:
-                original_value = OriginalValue(property_id=property_record.id, value=value)
-                session.add(original_value)
-
-            # Store 2K scaling factors
-            if prop in scale_2k:
-                scaling_2k = ScalingFactor(
-                    property_id=property_record.id,
-                    resolution="2K",
-                    **scale_2k[prop]
-                )
-                session.add(scaling_2k)
-
-            # Store 4K scaling factors
-            if prop in scale_4k:
-                scaling_4k = ScalingFactor(
-                    property_id=property_record.id,
-                    resolution="4K",
-                    **scale_4k[prop]
-                )
-                session.add(scaling_4k)
-
-        session.commit()
+        log.exception("Error processing file %s.", original_file, exc_info=error)
+        raise
 
 
 # ==============================================================#
@@ -400,6 +358,7 @@ def calculate_scaling_factors(
     scaled_2k_directory: Path,
     scaled_4k_directory: Path,
     input_format: str,
+    output_directory: Path,
 ) -> None:
     """
     Calculates scaling factors for text files by comparing original files with their 2K and 4K counterparts.
@@ -442,9 +401,27 @@ def calculate_scaling_factors(
                 if (scaled_2k_directory / original_file.relative_to(original_directory)).exists()
                 and (scaled_4k_directory / original_file.relative_to(original_directory)).exists()
             ]
-            list(executor.map(calculate_scaling_factors_worker, args, chunksize=10))
+            results = list(executor.map(calculate_scaling_factors_worker, args, chunksize=10))
 
-        log.info("Scaling factors calculated and stored in the database.")
+        # Filter out results that are None (files that were skipped).
+        scaling_factors = {file: data for file, data in results if data is not None}
+
+        # Check if any scaling factors were calculated.
+        if not scaling_factors:
+            log.warning("No valid scaling factors were calculated.")
+            return
+
+        # Separate scaling factors for 2K and 4K resolutions.
+        output_2k = {file: data["2K"] for file, data in scaling_factors.items()}
+        output_4k = {file: data["4K"] for file, data in scaling_factors.items()}
+
+        # Write 2K scaling factors to file.
+        file_utils.write_file(output_directory / "2k_scaling_factors.txt", json.dumps(output_2k, indent=2))
+        log.info("2K scaling factors written to %s", output_directory / "2k_scaling_factors.txt")
+
+        # Write 4K scaling factors to file.
+        file_utils.write_file(output_directory / "4k_scaling_factors.txt", json.dumps(output_4k, indent=2))
+        log.info("4K scaling factors written to %s", output_directory / "4k_scaling_factors.txt")
 
     except FileNotFoundError as error:
         log.exception("No matching %s files found in the directories.", input_format.upper(), exc_info=error)

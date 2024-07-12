@@ -1,3 +1,8 @@
+Okay, let's implement the new scaling function (`scale_file_contents`) and update `scale_positional_values` to use it.
+
+Here's the updated `text_processing.py` code:
+
+```python
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
@@ -450,3 +455,191 @@ def calculate_scaling_factors(
         log.exception("No matching %s files found in the directories.", input_format.upper(), exc_info=error)
     except Exception as error:
         log.exception("An unexpected error occurred while calculating scaling factors.", exc_info=error)
+
+
+# ==============================================================#
+#            New function for scaling file contents             #
+# ==============================================================#
+
+
+def scale_file_contents(file_path: Path, resolution: str) -> str:
+    """
+    Scales positional values in a text file based on stored scaling factors.
+
+    This function reads the file, identifies positional properties, and applies
+    scaling factors from the database based on the resolution.
+
+    Args:
+    ----
+    - file_path (Path): The path to the text file.
+    - resolution (str): The target resolution (e.g., "2K", "4K").
+
+    Returns:
+    -------
+    - str: The scaled content of the file.
+
+    Raises:
+    ------
+    - Exception: If an error occurs during file processing or database interaction.
+    """
+    try:
+        # Read the content of the file.
+        content = file_utils.read_file(file_path)
+
+        if content is not None:
+            # Extract positional values from the file.
+            original_values = extract_positional_values(file_path)
+
+            # Apply scaling factors to the values
+            scaled_content = apply_scaling_factors(content, original_values, resolution)
+
+            return scaled_content
+
+        else:
+            # Skip to the next file if no content is found.
+            log.error("No content found in file: %s", file_path)
+
+    except Exception as error:
+        log.exception("An unexpected error occurred while scaling file: %s", file_path, exc_info=error)
+
+
+def apply_scaling_factors(content: str, original_values: dict[str, list[float]], resolution: str) -> str:
+    """
+    Applies scaling factors to the content of a text file.
+
+    This function iterates through the original values and applies scaling factors
+    from the database based on the resolution.
+
+    Args:
+    ----
+    - content (str): The content of the text file.
+    - original_values (dict[str, list[float]]): Original positional values for the file.
+    - resolution (str): The target resolution (e.g., "2K", "4K").
+
+    Returns:
+    -------
+    - str: The content with scaled positional values.
+
+    Raises:
+    ------
+    - Exception: If an error occurs during database interaction.
+    """
+    try:
+        with Session(engine) as session:
+            # Identify properties and apply scaling factors
+            for prop, values in original_values.items():
+                # Retrieve scaling factors for the property and resolution
+                scaling_factor = (
+                    session.exec(
+                        select(ScalingFactor).where(
+                            ScalingFactor.property_id == Property.id,
+                            Property.name == prop,
+                            ScalingFactor.resolution == resolution,
+                        )
+                    )
+                    .join(Property)
+                    .first()
+                )
+
+                # Apply scaling factor if found
+                if scaling_factor:
+                    # Calculate scaled values
+                    scaled_values = [round(v * scaling_factor.mean) for v in values]
+
+                    # Update the content with scaled values
+                    content = re.sub(
+                        rf"\b{prop}\b\s*=\s*({[^}]+}|-?\d+(?:\.\d+)?%?|[^}\n]+)",
+                        lambda m: f"{prop} = {m.group(1) if m.group(1) == '-1' or any(x in m.group(1) for x in ['%', '@', '10s']) else scaled_values.pop(0)}",
+                        content,
+                        flags=re.IGNORECASE,
+                    )
+
+        return content
+
+    except Exception as error:
+        log.exception("An unexpected error occurred while applying scaling factors.", exc_info=error)
+
+
+# ============================================================#
+#        Updated caller function for scaling positional values        #
+# ============================================================#
+
+
+def scale_positional_values(
+    input_directory: Path, output_directory: Path, input_format: str, resolution: str
+) -> None:
+    """
+    Scales relevant positional values in text files according to a specified scaling factor.
+
+    This function reads text files from the input directory, applies a scaling factor to
+    specific positional attributes, and writes the modified content to the output directory.
+
+    Args:
+    ----
+    - input_directory (Path): The directory containing the GUI files to process.
+    - output_directory (Path): The directory to output processed files.
+    - input_format (str): The file extension of input GUI files (e.g., 'xml', 'ui').
+    - resolution (str): The target resolution (e.g., "2K", "4K").
+
+    Returns:
+    -------
+    - None
+
+    Raises:
+    ------
+    - FileNotFoundError: If no images are found in the input directory.
+    - ValueError: If an invalid scaling factor is provided.
+    - Exception: If an unexpected error occurs.
+    """
+    log.info("Scaling positional values in text files for %s resolution...", resolution)
+
+    try:
+        # Use a ProcessPoolExecutor to run the worker function in parallel.
+        input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
+        with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+            for input_file in input_files:
+                # Scale file contents
+                scaled_content = scale_file_contents(input_file, resolution)
+
+                if scaled_content is not None:
+                    # Calculate the relative output path to maintain directory structure.
+                    relative_path = input_file.relative_to(input_directory)
+                    output_path = output_directory / relative_path.parent
+
+                    # Write the scaled content to the output file
+                    output_path.mkdir(parents=True, exist_ok=True)
+                    output_file = output_path / input_file.name
+                    file_utils.write_file(output_file, scaled_content)
+                    log.debug("Updated %s with scaled values.", output_file.name)
+
+                else:
+                    log.debug("No changes have been made to %s.", input_file.name)
+
+    except FileNotFoundError as error:
+        log.exception("No %s files found in %s.", input_format.upper(), input_directory, exc_info=error)
+        sys.exit()
+    except ValueError as error:
+        log.exception("'%s' is not a valid scaling factor.", scale_factor, exc_info=error)
+        sys.exit()
+    except Exception as error:
+        log.exception("An unexpected error occurred.", exc_ ```
+
+**Explanation:**
+
+- **`scale_file_contents`:** This function now reads the file, extracts positional values, and calls `apply_scaling_factors` to apply scaling factors based on the resolution.
+- **`apply_scaling_factors`:** This function iterates through the original values and retrieves scaling factors from the database for each property and resolution. It then applies the scaling factor to the values and updates the content.
+- **`scale_positional_values`:** This function now takes a `resolution` argument and calls `scale_file_contents` for each file to scale the content based on the provided resolution.
+
+**Key Improvements:**
+
+- **Granular scaling:** The code now applies scaling factors individually to properties based on the stored data, achieving the granular scaling objective.
+- **Database integration:** The code uses the database to retrieve scaling factors for each property and resolution.
+- **File handling:** The code now handles the scaling of file contents and writes the scaled content to the output directory.
+
+**Next Steps:**
+
+- Implement error handling in database operations and other functions.
+- Update the main script to use the new scaling workflow.
+- Test and validate the implementation.
+
+Let me know if you have any questions or want to proceed with the next step!
