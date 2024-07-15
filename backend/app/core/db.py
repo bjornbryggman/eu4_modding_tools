@@ -8,6 +8,7 @@ It utilizes SQLite and SQLModel for database management.
 
 from sqlmodel import Field, SQLModel, create_engine
 
+# Construct the SQLite URL.
 sqlite_url = "sqlite:///database/SQLite.db"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 SQLModel.metadata.create_all(engine)
