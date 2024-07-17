@@ -1,36 +1,63 @@
 [project]
-name = "EU4-Modding-Tools"
-version = "0.4"
+name = "EU4_Modding_Tools"
+version = "0.5"
 description = "Various scripts for modding Europa Universalis 4."
+
+readme = "README.md"
+authors = [{name = "Björn Gunnar Bryggman", email = "bjorn.bryggman@gmail.com"}]
+maintainers = [{name = "Björn Gunnar Bryggman", email = "bjorn.bryggman@gmail.com"}]
+
+classifiers = [
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3.12",
+  "Operating System :: OS Independent",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "License :: OSI Approved :: MIT License"
+]
+
 requires-python = ">=3.12"
 dependencies = [
-    "structlog >= 24.2.0",
-    "Wand >= 0.6.13",
-    "replicate >= 0.25.2",
+    "instructor >= 1.3.5",
+    "openai >= 1.35.0",
+    "pydantic >= 2.8.0",
     "python-dotenv >= 1.0.1",
-    "pydantic >= 2.8.2",
-    "instructor >= 1.3.4",
-    "openai >= 1.25.0",
+    "replicate >= 0.28",
     "requests >= 2.32.3",
-    "sqlmodel >= 0.0.19"
+    "rich >= 13.7.1",
+    "structlog >= 24.2.0",
+    "sqlmodel >= 0.0.19",
+    "Wand >= 0.6.13",
 ]
-authors = [
-  {name = "Björn Gunnar Bryggman", email = "bjorn.bryggman@gmail.com"}
-]
-maintainers = [
-  {name = "Björn Gunnar Bryggman", email = "bjorn.bryggman@gmail.com"}
-]
-readme = "README.md"
-license = {file = "LICENSE"}
-
 
 [project.urls]
 Repository = "https://github.com/bjornbryggman/EU4-Modding-Tools.git"
-"Bug Tracker" = "https://github.com/bjornbryggman/EU4-Modding-Tools/issues"
 
 [tool.rye]
 managed = true
 generate-hashes = true
 dev-dependencies = [
-    "ruff >= 0.4.10"
+    "coverage",
+    "faker",
+    "hypothesis",
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
 ]
+
+[tool.rye.scripts]
+"check:ruff" = "ruff ."
+"fix:ruff" = "ruff --fix ."
+"format:ruff" = "ruff format"
+
+format = { chain = [
+  "check:ruff",
+  "fix:ruff",
+  "format:ruff",
+]}
+
+[tool.pytest.ini_options]
+testpaths = ["*tests*"]
+addopts = "--tb=short"
+xfail_strict = true
+asyncio_mode = "auto"
+filterwarnings = ["error"]

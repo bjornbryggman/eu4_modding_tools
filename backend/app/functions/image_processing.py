@@ -1,7 +1,7 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-This module provides functions for converting and resizing images using Imagemagick (Wand implementation) and Texconv.
+This module provides functions for converting and resizing images.
 
 It utilizes multiprocessing to speed up operations.
 """
@@ -56,7 +56,14 @@ def image_conversion_worker(args: tuple) -> None:
     - OSError: If an I/O error occurs.
     - Exception: If an unexpected error occurs.
     """
-    input_file, input_directory, output_directory, error_directory, command_options, output_format = args
+    (
+        input_file,
+        input_directory,
+        output_directory,
+        error_directory,
+        command_options,
+        output_format,
+    ) = args
 
     try:
         # Calculate the relative output path to maintain directory structure.
@@ -77,18 +84,28 @@ def image_conversion_worker(args: tuple) -> None:
 
         # Run Texconv command.
         subprocess.run(texconv_command, check=True, capture_output=True, text=True)
-        log.debug("Successfully converted %s to %s.", input_file.name, output_format.upper())
+        log.debug(
+            "Successfully converted %s to %s.", input_file.name, output_format.upper()
+        )
 
     # Fallback to using Imagemagick in case of problems.
     except subprocess.CalledProcessError as error:
-        log.exception("Texconv failed to convert %s. Attempting Imagemagick fallback.", input_file, exc_info=error)
+        log.exception(
+            "Texconv failed to convert %s. Attempting Imagemagick fallback.",
+            input_file,
+            exc_info=error,
+        )
 
         try:
             # Convert the image using Imagemagick (Wand implementation).
             with Image(filename=str(input_file)) as img:
                 img.format = output_format
                 img.save(filename=str(output_path))
-            log.debug("Successfully converted %s to %s using Imagemagick.", input_file.name, output_format.upper())
+            log.debug(
+                "Successfully converted %s to %s using Imagemagick.",
+                input_file.name,
+                output_format.upper(),
+            )
 
         # Copy problematic file to error directory for manual processing as a last resort.
         except CorruptImageError as error:
@@ -100,10 +117,16 @@ def image_conversion_worker(args: tuple) -> None:
             shutil.copy(input_file, error_path)
 
         except Exception as error:
-            log.exception("Both Texconv and Imagemagick failed to convert %s.", input_file, exc_info=error)
+            log.exception(
+                "Both Texconv and Imagemagick failed to convert %s.",
+                input_file,
+                exc_info=error,
+            )
 
     except PermissionError as error:
-        log.exception("Permission denied when accessing file: %s", input_file, exc_info=error)
+        log.exception(
+            "Permission denied when accessing file: %s", input_file, exc_info=error
+        )
         sys.exit()
     except (FileOpenError, WandError, OSError) as error:
         log.exception("Error processing %s.", input_file, exc_info=error)
@@ -143,7 +166,7 @@ def image_resizing_worker(args: tuple) -> None:
     - Exception: If an unexpected error occurs.
 
     """
-    input_file, input_directory, output_directory, scaling_factor, chosen_filter = args
+    (input_file, input_directory, output_directory, scaling_factor, chosen_filter) = args
 
     try:
         # Calculate the relative output path to maintain directory structure.
@@ -151,7 +174,7 @@ def image_resizing_worker(args: tuple) -> None:
         output_path = output_directory / relative_path
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Open the image, resize it using the chosen filter, and save it to the output path.
+        # Open the image, resize it, and save it to the output path.
         with Image(filename=str(input_file)) as img:
             img.resize(
                 int(img.width * scaling_factor),
@@ -160,10 +183,14 @@ def image_resizing_worker(args: tuple) -> None:
             )
             img.save(filename=str(output_path))
 
-        log.debug("Successfully resized %s by a factor of %s.", input_file.name, scaling_factor)
+        log.debug(
+            "Successfully resized %s by a factor of %s.", input_file.name, scaling_factor
+        )
 
     except PermissionError as error:
-        log.exception("Permission denied when accessing file: %s", input_file, exc_info=error)
+        log.exception(
+            "Permission denied when accessing file: %s", input_file, exc_info=error
+        )
         sys.exit()
     except CorruptImageError as error:
         log.exception("Failed to read image file %s.", input_file, exc_info=error)
@@ -187,13 +214,13 @@ def image_conversion(
     output_format: str,
 ) -> None:
     """
-    Converts images from one format to another using Texconv, with Imagemagick as a fallback.
+    Converts images between formats using Texconv, with Imagemagick as a fallback.
 
     Args:
     ----
     - input_directory (Path): The directory containing the input images to convert.
     - output_directory (Path): The directory where the converted images will be stored.
-    - error_directory (Path): The directory where potential problematic files will be copied.
+    - error_directory (Path): The directory where any problematic files will be copied.
     - command_options (list): Additional options for the Texconv command.
     - input_format (str): The format of the input images (e.g., "dds").
     - output_format (str): The format of the output images (e.g., "png").
@@ -239,22 +266,31 @@ def image_conversion(
                 pass
 
     except FileNotFoundError as error:
-        log.exception("No %s files found in %s.", input_format.upper(), input_directory, exc_info=error)
+        log.exception(
+            "No %s files found in %s.",
+            input_format.upper(),
+            input_directory,
+            exc_info=error,
+        )
         sys.exit()
     except Exception as error:
         log.exception("An unexpected error occurred.", exc_info=error)
 
 
-#=====================================================#
+# =====================================================#
 #         Caller function for resizing images         #
-#=====================================================#
+# =====================================================#
 
 
 def image_resizing(
-    input_directory: Path, output_directory: Path, input_format: str, scaling_factor: float, chosen_filter: str
+    input_directory: Path,
+    output_directory: Path,
+    input_format: str,
+    scaling_factor: float,
+    chosen_filter: str,
 ) -> None:
     """
-    Resizes images according to a specified scaling factor using Imagemagick (Wand implementation).
+    Resizes images according to a specified scaling factor using Imagemagick.
 
     Args:
     ----
@@ -291,7 +327,13 @@ def image_resizing(
         input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
         with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
             args = [
-                (input_file, input_directory, output_directory, scaling_factor, chosen_filter)
+                (
+                    input_file,
+                    input_directory,
+                    output_directory,
+                    scaling_factor,
+                    chosen_filter,
+                )
                 for input_file in input_files
             ]
             futures = list(executor.map(image_resizing_worker, args, chunksize=10))
@@ -301,10 +343,17 @@ def image_resizing(
                 pass
 
     except FileNotFoundError as error:
-        log.exception("No %s files found in %s.", input_format.upper(), input_directory, exc_info=error)
+        log.exception(
+            "No %s files found in %s.",
+            input_format.upper(),
+            input_directory,
+            exc_info=error,
+        )
         sys.exit()
     except ValueError as error:
-        log.exception("'%s' is not a valid scaling factor.", scaling_factor, exc_info=error)
+        log.exception(
+            "'%s' is not a valid scaling factor.", scaling_factor, exc_info=error
+        )
         sys.exit()
     except Exception as error:
         log.exception("An unexpected error occurred.", exc_info=error)

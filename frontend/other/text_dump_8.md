@@ -71,6 +71,69 @@ def calculate_scaling_factors(original_values, scaled_values):
 def _calculate_property_scaling(original_prop_values, scaled_prop_values):
     # ... calculation logic ...
     return scaling_factor
+
+def scale_positional_values(
+    input_directory: Path, output_directory: Path, input_format: str, resolution: str
+) -> None:
+    """
+    Scales relevant positional values in text files according to a specified scaling factor.
+
+    This function reads text files from the input directory, applies a scaling factor to
+    specific positional attributes, and writes the modified content to the output directory.
+
+    Args:
+    ----
+    - input_directory (Path): The directory containing the GUI files to process.
+    - output_directory (Path): The directory to output processed files.
+    - input_format (str): The file extension of input GUI files (e.g., 'xml', 'ui').
+    - resolution (str): The target resolution (e.g., "2K", "4K").
+
+    Returns:
+    -------
+    - None
+
+    Raises:
+    ------
+    - FileNotFoundError: If no images are found in the input directory.
+    - ValueError: If an invalid scaling factor is provided.
+    - Exception: If an unexpected error occurs.
+    """
+    log.info("Scaling positional values in text files for %s resolution...", resolution)
+
+    try:
+        # Use a ProcessPoolExecutor to run the worker function in parallel.
+        input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
+        with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+            for input_file in input_files:
+                # Scale file contents
+                scaled_content = scale_file_contents(input_file, resolution)
+
+                if scaled_content is not None:
+                    # Calculate the relative output path to maintain directory structure.
+                    relative_path = input_file.relative_to(input_directory)
+                    output_path = output_directory / relative_path.parent
+
+                    # Write the scaled content to the output file
+                    output_path.mkdir(parents=True, exist_ok=True)
+                    output_file = output_path / input_file.name
+                    file_utils.write_file(output_file, scaled_content)
+                    log.debug("Updated %s with scaled values.", output_file.name)
+
+                else:
+                    log.debug("No changes have been made to %s.", input_file.name)
+
+    except FileNotFoundError as error:
+        log.exception(
+            "No %s files found in %s.",
+            input_format.upper(),
+            input_directory,
+            exc_info=error)
+        sys.exit()
+    except ValueError as error:
+        log.exception("Invalid scaling factor.", exc_info=error)
+        sys.exit()
+    except Exception as error:
+        log.exception("An unexpected error occurred.", exc_info=error)
 ```
 
 **Next Steps:**
@@ -82,3 +145,4 @@ def _calculate_property_scaling(original_prop_values, scaled_prop_values):
 By optimizing and refactoring your code, you can significantly improve the performance and maintainability of your scaling solution.
 
 Let me know if you have any questions or want to proceed with the next step!
+

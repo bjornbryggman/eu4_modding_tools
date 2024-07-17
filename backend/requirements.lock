@@ -380,9 +380,9 @@ idna==3.7 \
     # via httpx
     # via requests
     # via yarl
-instructor==1.3.4 \
-    --hash=sha256:20242fdb42ed4a691d067db9bf67d317dfa060ee6419751bbe30fdd3c48e7d23 \
-    --hash=sha256:ca4f36e69a1b147a48417fc4ffbfd63ac01957d4e1f3bb24460b09a024a5f195
+instructor==1.3.5 \
+    --hash=sha256:067372a6bbecf6617720365f1afdc100fecba679b0e152a00918442c2e3375ff \
+    --hash=sha256:fe725db5b4b32ca08ca1e820e699cf871b52cb3385b95de37ffb97d5b0a49c18
     # via eu4-modding-tools
 jiter==0.4.2 \
     --hash=sha256:01427458bc9550f2eda09d425755330e7d0eb09adce099577433bebf05d28d59 \
@@ -548,9 +548,9 @@ multidict==6.0.5 \
     --hash=sha256:fe5d7785250541f7f5019ab9cba2c71169dc7d74d0f45253f8313f436458a4ef
     # via aiohttp
     # via yarl
-openai==1.35.13 \
-    --hash=sha256:36ec3e93e0d1f243f69be85c89b9221a471c3e450dfd9df16c9829e3cdf63e60 \
-    --hash=sha256:c684f3945608baf7d2dcc0ef3ee6f3e27e4c66f21076df0b47be45d57e6ae6e4
+openai==1.35.14 \
+    --hash=sha256:394ba1dfd12ecec1d634c50e512d24ff1858bbc2674ffcce309b822785a058de \
+    --hash=sha256:adadf8c176e0b8c47ad782ed45dc20ef46438ee1f02c7103c4155cff79c8f68b
     # via eu4-modding-tools
     # via instructor
 packaging==24.1 \
@@ -676,6 +676,7 @@ requests==2.32.3 \
 rich==13.7.1 \
     --hash=sha256:4edbae314f59eb482f54e9e30bf00d33350aaa94f4bfcd4e9e3110e64d0d7222 \
     --hash=sha256:9be308cb1fe2f1f57d67ce99e95af38a1e2bc71ad9813b0e247cf7ffbcc3a432
+    # via eu4-modding-tools
     # via instructor
     # via typer
 shellingham==1.5.4 \
@@ -739,13 +740,13 @@ sqlalchemy==2.0.31 \
     --hash=sha256:fa4b1af3e619b5b0b435e333f3967612db06351217c58bfb50cee5f003db2a5a \
     --hash=sha256:fc6b14e8602f59c6ba893980bea96571dd0ed83d8ebb9c4479d9ed5425d562e9
     # via sqlmodel
-sqlmodel==0.0.19 \
-    --hash=sha256:6c8125d4101970d031e9aae970b20cbeaf44149989f8366d939f4ab21aab8763 \
-    --hash=sha256:95449b0b48a40a3eecf0a629fa5735b9dfc8a5574a91090d24ca17f02246ad96
+sqlmodel==0.0.20 \
+    --hash=sha256:744756c49e24095808984754cc4d3a32c2d8361fef803c4914fadcb912239bc9 \
+    --hash=sha256:94dd1f63e4ceb0ab405e304e1ad3e8b8c8800b47c3ca5f68736807be8e5b9314
     # via eu4-modding-tools
-structlog==24.2.0 \
-    --hash=sha256:0e3fe74924a6d8857d3f612739efb94c72a7417d7c7c008d12276bca3b5bf13b \
-    --hash=sha256:983bd49f70725c5e1e3867096c0c09665918936b3db27341b41d294283d7a48a
+structlog==24.3.0 \
+    --hash=sha256:bcf6b890cf8b48c35fa127ea79c155c79b9e6a4a826f4ce9dfc3bebd72f07fa8 \
+    --hash=sha256:ee4c2c7ef7971201f89f85893a4470ecd03bbd97bb54d75581225fdb894689a4
     # via eu4-modding-tools
 tenacity==8.5.0 \
     --hash=sha256:8bc6c0c8a09b31e6cad13c47afbed1a567518250a9a171418582ed8d9c20ca78 \

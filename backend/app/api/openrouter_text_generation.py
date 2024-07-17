@@ -22,12 +22,13 @@ log = structlog.stdlib.get_logger(__name__)
 # ====================================================#
 
 
-async def completion_request(prompt: list[dict], model: str, api_key: str, stream: bool) -> tuple:
+async def completion_request(
+    prompt: list[dict], model: str, api_key: str, stream: bool
+) -> tuple:
     """
     Makes a completion request to the OpenRouter API and returns the response.
 
     Args:
-    ----
     ----
         - prompt (list[dict]): The input prompt for the completion request.
         - model (str): The name of the model to use for the completion request.
@@ -36,14 +37,14 @@ async def completion_request(prompt: list[dict], model: str, api_key: str, strea
 
     Returns:
     -------
-    -------
         - A tuple containing the response text and the cost of the API call.
 
     Raises:
     ------
-    ------
-        - openai.OpenAIError: If an error occurs while interacting with the OpenRouter model.
-        - requests.RequestException: If an error occurs while making the request to the OpenRouter API.
+        - openai.OpenAIError: If an error occurs while interacting
+            with the OpenRouter model.
+        - requests.RequestException: If an error occurs while making
+            the request to the OpenRouter API.
         - ValueError: If an invalid input parameter is provided.
         - Exception: If an unexpected error occurs during the process execution.
 
@@ -51,7 +52,7 @@ async def completion_request(prompt: list[dict], model: str, api_key: str, strea
     try:
         log.debug("Calling the OpenRouter API...")
 
-        # Make an asynchronous completion request to the OpenRouter API (using the OpenAI client).
+        # Make an asynchronous completion request using the OpenAI client.
         client = AsyncOpenAI()
         completion = await client.chat.completions.create(
             model=model,
@@ -61,7 +62,7 @@ async def completion_request(prompt: list[dict], model: str, api_key: str, strea
             extra_query={"transforms": {}, "min_p": {"value": 0.1}},
         )
 
-        # Stream the output as chunks if stream = True, then filter and append it to the cohesive_text variable.
+        # Stream the output as chunks if stream = True.
         if stream:
             chunks = []
             async for chunk in completion:
@@ -84,13 +85,18 @@ async def completion_request(prompt: list[dict], model: str, api_key: str, strea
         log.debug("Cost for API call: %s", formatted_string)
 
     except openai.OpenAIError as error:
-        log.exception("APIError occurred while interacting with the OpenRouter model.", exc_info=error)
+        log.exception(
+            "APIError occurred while interacting with the OpenRouter model.",
+            exc_info=error,
+        )
     except requests.RequestException as error:
         log.exception("Request to the OpenRouter API failed.", exc_info=error)
     except ValueError as error:
         log.exception("Invalid input parameter provided.", exc_info=error)
     except Exception as error:
-        log.exception("An unexpected error occurred during the process execution.", exc_info=error)
+        log.exception(
+            "An unexpected error occurred during the process execution.", exc_info=error
+        )
 
     else:
         return (cohesive_text, formatted_string)
@@ -119,7 +125,8 @@ def query_cost_and_stats(generation_id: str, api_key: str) -> dict:
     Raises:
     ------
     ------
-        - requests.RequestException: If an error occurs while making the request to the OpenRouter API.
+        - requests.RequestException: If an error occurs while making
+            the request to the OpenRouter API.
 
     """
     # Construct the API URL with the generation ID.

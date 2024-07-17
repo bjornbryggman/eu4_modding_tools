@@ -6,7 +6,14 @@ This module provides database functionality for storing and retrieving data.
 It utilizes SQLite and SQLModel for database management.
 """
 
-from sqlmodel import Field, SQLModel, create_engine
+import json
+from pathlib import Path
+
+import structlog
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
+# Initialize logger for this module.
+log = structlog.stdlib.get_logger(__name__)
 
 # Construct the SQLite URL.
 sqlite_url = "sqlite:///database/SQLite.db"
@@ -29,6 +36,7 @@ class File(SQLModel, table=True):
     - filename (str): The name of the file.
     - path (str): The path to the file.
     """
+
     id: int | None = Field(default=None, primary_key=True)
     filename: str = Field(index=True)
     path: str = Field(index=True)
@@ -44,6 +52,7 @@ class Property(SQLModel, table=True):
     - name (str): The name of the property (e.g., "x", "y", "width").
     - file_id (int): Foreign key referencing the file this property belongs to.
     """
+
     id: int | None = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     file_id: int = Field(foreign_key="file.id")
@@ -56,9 +65,10 @@ class OriginalValue(SQLModel, table=True):
     Attributes:
     ----------
     - id (int): The primary key of the original value.
-    - property_id (int): Foreign key referencing the property this value belongs to.
+    - property_id (int): Foreign key referencing the associated property id.
     - value (float): The original value of the property.
     """
+
     id: int | None = Field(default=None, primary_key=True)
     property_id: int = Field(foreign_key="property.id")
     value: float = Field(index=True)
@@ -71,7 +81,7 @@ class ScalingFactor(SQLModel, table=True):
     Attributes:
     ----------
     - id (int): The primary key of the scaling factor.
-    - property_id (int): Foreign key referencing the property this factor applies to.
+    - property_id (int): Foreign key referencing the associated property id.
     - resolution (str): The resolution (e.g., "2K", "4K").
     - mean (float): The mean scaling factor.
     - median (float): The median scaling factor.
@@ -79,6 +89,7 @@ class ScalingFactor(SQLModel, table=True):
     - min (float): The minimum scaling factor.
     - max (float): The maximum scaling factor.
     """
+
     id: int | None = Field(default=None, primary_key=True)
     property_id: int = Field(foreign_key="property.id")
     resolution: str = Field(index=True)
@@ -108,3 +119,107 @@ def create_database() -> None:
     """
     engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
     SQLModel.metadata.create_all(engine)
+
+
+def get_scaling_factors(file_path: str, resolution: str) -> dict[str, float]:
+    """
+    Retrieves scaling factors for a given file and resolution from the database.
+
+    It uses SQLModel's 'select' and 'join' to query the database
+    and returns a dictionary of scaling factors.
+
+    Args:
+    ----
+    - file_path (str): The path to the file.
+    - resolution (str): The target resolution (e.g., "2K", "4K").
+
+    Returns:
+    -------
+    - dict[str, float]: A dictionary where keys are property names and values are
+    the corresponding scaling factors for the specified resolution.
+
+    Raises:
+    ------
+    - Exception: If an error occurs during database interaction.
+    """
+    try:
+        with Session(engine) as session:
+            scaling_factors = session.exec(
+                select(ScalingFactor.name, ScalingFactor.mean)
+                .join(Property)
+                .join(File)
+                .where(File.path == file_path, ScalingFactor.resolution == resolution)
+            ).all()
+
+            return dict(scaling_factors)
+
+    except Exception as error:
+        log.exception(
+            "An unexpected error occurred while retrieving scaling factors.",
+            exc_info=error,
+        )
+
+
+def generate_scaling_report(resolution: str) -> None:
+    """
+    Generates a report of scaling factors for the specified resolution.
+
+    It queries the database, retrieves the scaling data, and writes it to a JSON file.
+
+    Args:
+    ----
+    - resolution (str): The target resolution (e.g., "2K", "4K").
+
+    Returns:
+    -------
+    - None
+    """
+    try:
+        with Session(engine) as session:
+            scaling_data = session.exec(
+                select(
+                    File.filename,
+                    Property.name,
+                    ScalingFactor.mean,
+                    ScalingFactor.median,
+                    ScalingFactor.std_dev,
+                    ScalingFactor.min,
+                    ScalingFactor.max,
+                )
+                .join(Property)
+                .join(ScalingFactor)
+                .where(ScalingFactor.resolution == resolution)
+            ).all()
+
+            # Create a dictionary to store scaling data for each file.
+            report = {}
+            for (
+                filename,
+                prop_name,
+                mean_factor,
+                median_factor,
+                std_dev,
+                min_factor,
+                max_factor,
+            ) in scaling_data:
+                if filename not in report:
+                    report[filename] = {}
+                report[filename][prop_name] = {
+                    "mean": mean_factor,
+                    "median": median_factor,
+                    "std_dev": std_dev,
+                    "min": min_factor,
+                    "max": max_factor,
+                }
+
+            # Write the report to a file.
+            with Path.open(f"{resolution}_scaling_report.json", "w") as f:
+                json.dump(report, f, indent=2)
+
+            log.info("Scaling report for %s resolution generated.", resolution)
+
+    except Exception as error:
+        log.exception(
+            "An unexpected error occurred while generating the scaling report.",
+            exc_info=error,
+        )

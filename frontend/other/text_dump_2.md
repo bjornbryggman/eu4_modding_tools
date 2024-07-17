@@ -462,45 +462,7 @@ def calculate_scaling_factors(
 # ==============================================================#
 
 
-def scale_file_contents(file_path: Path, resolution: str) -> str:
-    """
-    Scales positional values in a text file based on stored scaling factors.
 
-    This function reads the file, identifies positional properties, and applies
-    scaling factors from the database based on the resolution.
-
-    Args:
-    ----
-    - file_path (Path): The path to the text file.
-    - resolution (str): The target resolution (e.g., "2K", "4K").
-
-    Returns:
-    -------
-    - str: The scaled content of the file.
-
-    Raises:
-    ------
-    - Exception: If an error occurs during file processing or database interaction.
-    """
-    try:
-        # Read the content of the file.
-        content = file_utils.read_file(file_path)
-
-        if content is not None:
-            # Extract positional values from the file.
-            original_values = extract_positional_values(file_path)
-
-            # Apply scaling factors to the values
-            scaled_content = apply_scaling_factors(content, original_values, resolution)
-
-            return scaled_content
-
-        else:
-            # Skip to the next file if no content is found.
-            log.error("No content found in file: %s", file_path)
-
-    except Exception as error:
-        log.exception("An unexpected error occurred while scaling file: %s", file_path, exc_info=error)
 
 
 def apply_scaling_factors(content: str, original_values: dict[str, list[float]], resolution: str) -> str:

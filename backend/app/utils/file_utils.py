@@ -37,7 +37,7 @@ def read_file(file_path: Path) -> str:
     """
     encodings = ["utf-8", "latin-1", "ascii"]
 
-    # Use 'utf-8' encoding as a default, with 'latin-1' and 'ascii' as fallbacks.
+    # Use 'utf-8' encoding as default, with 'latin-1' and 'ascii' as fallbacks.
     for encoding in encodings:
         try:
             with file_path.open("r", encoding=encoding) as file:
@@ -59,7 +59,9 @@ def read_file(file_path: Path) -> str:
             return file.read().decode("utf-8", errors="replace")
 
     except Exception as error:
-        log.exception("Failed to read file even in binary mode: %s", file_path, exc_info=error)
+        log.exception(
+            "Failed to read file even in binary mode: %s", file_path, exc_info=error
+        )
         return None
 
 
@@ -89,7 +91,7 @@ def write_file(file_path: Path, content: str) -> None:
     """
     encodings = ["utf-8", "latin-1", "ascii"]
 
-    # Use 'utf-8' encoding as a default, with 'latin-1' and 'ascii' as fallbacks.
+    # Use 'utf-8' encoding as default, with 'latin-1' and 'ascii' as fallbacks.
     for encoding in encodings:
         try:
             with file_path.open("w", encoding=encoding) as file:
@@ -104,18 +106,20 @@ def write_file(file_path: Path, content: str) -> None:
         except Exception as error:
             log.exception("An unexpected error occurred: %s", file_path, exc_info=error)
 
-    # If all text encodings fail, try to write as binary
+    # If all text encodings fail, try to write as binary.
     try:
         with file_path.open("wb") as file:
             return file.write(content.encode("utf-8", errors="replace"))
 
     except Exception as error:
-        log.exception("Failed to write file even in binary mode: %s", file_path, exc_info=error)
+        log.exception(
+            "Failed to write file even in binary mode: %s", file_path, exc_info=error
+        )
 
 
 def unzip_files(input_directory: Path, output_directory: Path) -> None:
     """
-    Recursively searches through the input directory for ZIP files, extracts them, and moves the extracted files to the output directory.
+    Finds ZIPs, extracts them, and moves files to a specified output folder.
 
     Args:
     ----
@@ -135,7 +139,7 @@ def unzip_files(input_directory: Path, output_directory: Path) -> None:
     """
     try:
         for zip_file in input_directory.rglob("*.zip"):
-            # # Find the immediate subdirectory of input_directory that contains this ZIP file.
+            # Find the subdirectory of input_directory that contains this ZIP.
             relative_path = zip_file.relative_to(input_directory)
             immediate_subdir = relative_path.parts[0]
 
@@ -148,9 +152,13 @@ def unzip_files(input_directory: Path, output_directory: Path) -> None:
                 log.debug("Extracted files from %s to %s", zip_file, output_path)
 
     except FileNotFoundError as error:
-        log.exception("No .zip files found in %s, skipping...", input_directory, exc_info=error)
+        log.exception(
+            "No .zip files found in %s, skipping...", input_directory, exc_info=error
+        )
     except PermissionError as error:
-        log.exception("Permission denied when accessing file: %s", input_directory, exc_info=error)
+        log.exception(
+            "Permission denied when accessing file: %s", input_directory, exc_info=error
+        )
         sys.exit()
     except OSError as error:
         log.exception("Error processing %s.", input_directory, exc_info=error)
@@ -165,18 +173,14 @@ def preprocess_text_formatting(prefix: str, file_path: str, suffix: str) -> str:
     read_file(file_path)
     write_file(string, read_file)
 
-    content = f"""{prefix}{string}{suffix}"""
-
-    return content
+    return f"""{prefix}{string}{suffix}"""
 
 
 def get_base64_encoded_image(file_path):
     with open(file_path, "rb") as image_file:
         binary_data = image_file.read()
         base_64_encoded_data = base64.b64encode(binary_data)
-        base64_string = base_64_encoded_data.decode("utf-8")
-
-    return base64_string
+        return base_64_encoded_data.decode("utf-8")
 
 
 def create_directory(directory) -> None:

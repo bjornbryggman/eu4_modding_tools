@@ -38,8 +38,8 @@ async def image_generation(image_model: str, input_params: dict) -> str:
     Raises:
     ------
     ------
-        - RequestException: If an error occurs while making the request to the Replicate API.
-        - ReplicateError: If an error occurs while interacting with the Replicate API.
+        - RequestException: If an error occurs while making the API request.
+        - ReplicateError: If an error occurs while interacting with the API.
         - ValueError: If an invalid input parameter is provided.
         - TypeError: If an invalid data type is provided.
         - OSError: If an I/O error occurs while processing the file.
@@ -66,7 +66,9 @@ async def image_generation(image_model: str, input_params: dict) -> str:
     except TypeError as error:
         log.exception("Invalid data type provided.", exc_info=error)
     except Exception as error:
-        log.exception("An unexpected error occurred during the process execution.", exc_info=error)
+        log.exception(
+            "An unexpected error occurred during the process execution.", exc_info=error
+        )
 
     else:
         if not output_url.startswith(("http:", "https:")):
