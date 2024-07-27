@@ -1,0 +1,12 @@
+[ocean]
+ocean = "{
+		color = { 255 255 255 }
+
+		sound_type = sea
+		is_water = yes
+
+		movement_cost = 1.0
+	}"
+
+[inland_ocean]
+color = { 0 0 200 }

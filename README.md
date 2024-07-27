@@ -60,3 +60,48 @@ Does it adhere to our previously outlined plan? Does it contain any errors? Does
 Your reflection is logical and reasonable. As such, go ahead and directly modify the previously written code as you see fit, as per your critique.
 
 Take it slow and think before you act. There is no need to be overly verbose either - simply modifying the relevant code is enough.
+```
+EU4_Modding_Tools
+├─ backend
+│  ├─ .env
+│  ├─ app
+│  │  ├─ api
+│  │  │  ├─ openrouter_text_generation.py
+│  │  │  ├─ replicate_image_generation.py
+│  │  │  └─ __init__.py
+│  │  ├─ core
+│  │  │  ├─ config.py
+│  │  │  ├─ db.py
+│  │  │  └─ __init__.py
+│  │  ├─ database
+│  │  │  ├─ SQLite.db
+│  │  │  └─ __init__.py
+│  │  ├─ functions
+│  │  │  ├─ image_processing.py
+│  │  │  ├─ original_text.py
+│  │  │  ├─ text_processing.py
+│  │  │  ├─ text_processing_backup.py
+│  │  │  └─ __init__.py
+│  │  ├─ image_script.py
+│  │  ├─ main.py
+│  │  ├─ tests
+│  │  │  ├─ tests.py
+│  │  │  └─ __init__.py
+│  │  ├─ text_script.py
+│  │  ├─ utils
+│  │  │  ├─ checks.py
+│  │  │  ├─ file_utils.py
+│  │  │  ├─ logging_utils.py
+│  │  │  └─ __init__.py
+│  │  └─ __init__.py
+│  ├─ planning.md
+│  ├─ pyproject.toml
+│  ├─ README.md
+│  ├─ requirements-dev.lock
+│  ├─ requirements.lock
+│  └─ ruff.toml
+├─ frontend
+├─ LICENSE
+└─ README.md
+
+```

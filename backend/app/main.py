@@ -14,9 +14,8 @@ import structlog
 from dotenv import load_dotenv
 
 from app.core.config import DirectoryConfig
-from app.functions import image_processing
+from app.functions import image_processing, original_text
 from app.utils import file_utils, logging_utils
-from app.functions import original_text
 
 log = structlog.stdlib.get_logger(__name__)
 

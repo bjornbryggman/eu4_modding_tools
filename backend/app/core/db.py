@@ -26,6 +26,92 @@ SQLModel.metadata.create_all(engine)
 # =========================================================#
 
 
+# =====================================#
+#                Events                #
+# =====================================#
+
+class Event(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    origin: str
+    title: str = Field(index=True)
+    desc: str
+    picture: str = Field(index=True)
+
+
+class OriginalEventLocalisation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    event_id: int = Field(index=True, foreign_key="event.id")
+    event_title: str
+    event_description: str
+
+
+class GeneratedEventLocalisation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    event_id: int = Field(index=True, foreign_key="event.id")
+    spellchecked_title: str = Field(default=None)
+    spellchecked_description: str = Field(default=None)
+
+
+class OriginalEventPicture(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    event_id: int = Field(index=True, foreign_key="event.id")
+    original_picture: str = Field(index=True)
+
+
+class GeneratedEventPicture(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    event_id: int = Field(index=True, foreign_key="event.id")
+    prompt: str
+    generated_picture: str = Field(index=True)
+
+
+# ======================================#
+#                Terrain                #
+# ======================================#
+
+
+class Complete(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    continent: str
+    super_region: str
+    region: str
+    area: str
+    climate: str
+    terrain: str = Field(index=True)
+
+
+class Province(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(index=True)
+
+
+class Terr(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    terrain: str = Field(index=True)
+
+
+class Climate(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    terrain: str = Field(index=True)
+
+
+class Terrain(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    terrain: str = Field(index=True)
+    associated_provinces: tuple = Field(index=True)
+
+class GeneratedTerrainPicture(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    province_id: int = Field(index=True, foreign_key="province.id")
+    prompt: str
+    generated_picture: str = Field(index=True)
+
+
+# ======================================#
+#                Scaling                #
+# ======================================#
+
+
 class File(SQLModel, table=True):
     """
     Represents a file in the database.

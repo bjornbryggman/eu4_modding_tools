@@ -23,24 +23,24 @@ def read_file(file_path: Path) -> str:
 
     Args:
     ----
-        file_path (Path): The path to the file to read.
+    - file_path (Path): The path to the file to read.
 
     Returns:
     -------
-        str: The content of the file, or None if an error occurred.
+    - str: The content of the file, or None if an error occurred.
 
     Raises:
     ------
-        PermissionError: If the process lacks permission to read the file.
-        OSError: If an I/O related error occurs during file reading.
-        Exception: For any other unexpected errors during the read operation.
+    - PermissionError: If the process lacks permission to read the file.
+    - OSError: If an I/O related error occurs during file reading.
+    - Exception: For any other unexpected errors during the read operation.
     """
     encodings = ["utf-8", "latin-1", "ascii"]
 
     # Use 'utf-8' encoding as default, with 'latin-1' and 'ascii' as fallbacks.
     for encoding in encodings:
         try:
-            with file_path.open("r", encoding=encoding) as file:
+            with Path(file_path).open("r", encoding=encoding) as file:
                 return file.read()
 
         except UnicodeDecodeError:
@@ -51,18 +51,15 @@ def read_file(file_path: Path) -> str:
             log.exception("I/O error occurred: %s", file_path, exc_info=error)
         except Exception as error:
             log.exception("An unexpected error occurred: %s", file_path, exc_info=error)
-        return None
 
     # If all text encodings fail, try to read as binary.
     try:
-        with file_path.open("rb") as file:
+        with Path(file_path).open("rb") as file:
             return file.read().decode("utf-8", errors="replace")
-
     except Exception as error:
         log.exception(
             "Failed to read file even in binary mode: %s", file_path, exc_info=error
         )
-        return None
 
 
 # ====================================================#
@@ -94,8 +91,8 @@ def write_file(file_path: Path, content: str) -> None:
     # Use 'utf-8' encoding as default, with 'latin-1' and 'ascii' as fallbacks.
     for encoding in encodings:
         try:
-            with file_path.open("w", encoding=encoding) as file:
-                return file.write(content)
+            with Path(file_path).open("w", encoding=encoding) as file:
+                file.write(content)
 
         except UnicodeEncodeError:
             continue
@@ -108,9 +105,8 @@ def write_file(file_path: Path, content: str) -> None:
 
     # If all text encodings fail, try to write as binary.
     try:
-        with file_path.open("wb") as file:
-            return file.write(content.encode("utf-8", errors="replace"))
-
+        with Path(file_path).open("wb") as file:
+            file.write(content.encode("utf-8", errors="replace"))
     except Exception as error:
         log.exception(
             "Failed to write file even in binary mode: %s", file_path, exc_info=error

@@ -1,6 +1,6 @@
 required-version = ">=0.4.10"
 target-version = "py312"
-line-length = 90
+line-length = 100
 indent-width = 4
 respect-gitignore = true
 output-format = "json"

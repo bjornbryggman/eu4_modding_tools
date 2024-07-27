@@ -11,7 +11,7 @@ querying the cost of those requests.
 import openai
 import requests
 import structlog
-from openai import AsyncOpenAI
+from openai import OpenAI
 
 # Initialize logger for this module.
 log = structlog.stdlib.get_logger(__name__)
@@ -22,7 +22,7 @@ log = structlog.stdlib.get_logger(__name__)
 # ====================================================#
 
 
-async def completion_request(
+def completion_request(
     prompt: list[dict], model: str, api_key: str, stream: bool
 ) -> tuple:
     """
@@ -53,8 +53,8 @@ async def completion_request(
         log.debug("Calling the OpenRouter API...")
 
         # Make an asynchronous completion request using the OpenAI client.
-        client = AsyncOpenAI()
-        completion = await client.chat.completions.create(
+        client = OpenAI()
+        completion = client.chat.completions.create(
             model=model,
             messages=prompt,
             stream=stream,
@@ -65,7 +65,7 @@ async def completion_request(
         # Stream the output as chunks if stream = True.
         if stream:
             chunks = []
-            async for chunk in completion:
+            for chunk in completion:
                 if not hasattr(completion, "id"):
                     completion.id = chunk.id
                 part = chunk.choices[0].delta.content
