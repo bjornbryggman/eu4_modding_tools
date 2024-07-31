@@ -70,9 +70,7 @@ jobs:
               {"label": "bug", "header": "Fixes"},
               {"label": "refactor", "header": "Refactors"},
               {"label": "upgrade", "header": "Upgrades"},
-              {"label": "docs", "header": "Docs"},
-              {"label": "lang-all", "header": "Translations"},
-              {"label": "internal", "header": "Internal"},
+              {"label": "docs", "header": "Docs"}
             ]
           label_header_prefix: '### '
 
