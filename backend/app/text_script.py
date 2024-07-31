@@ -56,14 +56,10 @@ def text_positional_value_scaling() -> None:
     log.info("Initiating text processing (scaling) workflow...")
 
     # Scale positional values in GUI text files (for 4K monitors).
-    text_processing.scale_positional_values(
-        config.INPUT_DIR, config.OUTPUT_DIR_4K, "GUI", "4K"
-    )
+    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_4K, "GUI", "4K")
 
     # Scale positional values GUI text files (for 2K monitors).
-    text_processing.scale_positional_values(
-        config.INPUT_DIR, config.OUTPUT_DIR_2K, "GUI", "2K"
-    )
+    text_processing.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2K, "GUI", "2K")
 
 
 if __name__ == "__main__":

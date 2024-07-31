@@ -30,6 +30,7 @@ SQLModel.metadata.create_all(engine)
 #                Events                #
 # =====================================#
 
+
 class Event(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     origin: str
@@ -99,6 +100,7 @@ class Terrain(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     terrain: str = Field(index=True)
     associated_provinces: tuple = Field(index=True)
+
 
 class GeneratedTerrainPicture(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -241,8 +243,7 @@ def get_scaling_factors(file_path: str, resolution: str) -> dict[str, float]:
 
     except Exception as error:
         log.exception(
-            "An unexpected error occurred while retrieving scaling factors.",
-            exc_info=error,
+            "An unexpected error occurred while retrieving scaling factors.", exc_info=error
         )
 
 
@@ -306,6 +307,5 @@ def generate_scaling_report(resolution: str) -> None:
 
     except Exception as error:
         log.exception(
-            "An unexpected error occurred while generating the scaling report.",
-            exc_info=error,
+            "An unexpected error occurred while generating the scaling report.", exc_info=error
         )

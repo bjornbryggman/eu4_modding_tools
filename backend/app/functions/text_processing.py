@@ -63,9 +63,7 @@ def apply_scaling_factors(
             scaling_factors_query = (
                 session.exec(ScalingFactor.mean, Property.name)
                 .join(Property, ScalingFactor.property_id == Property.id)
-                .filter(
-                    ScalingFactor.resolution == resolution, Property.name.in_(properties)
-                )
+                .filter(ScalingFactor.resolution == resolution, Property.name.in_(properties))
             )
             scaling_factors = {name: mean for mean, name in scaling_factors_query}
 
@@ -113,11 +111,7 @@ def calculate_property_scaling(
         # Check if the property exists in both original and scaled values.
         if prop in scaled and len(original_values) == len(scaled[prop]):
             # Calculate scaling factors for each property.
-            factors = [
-                s / o
-                for o, s in zip(original_values, scaled[prop], strict=True)
-                if o != 0
-            ]
+            factors = [s / o for o, s in zip(original_values, scaled[prop], strict=True) if o != 0]
 
             # If factors are found, calculate statistics.
             if factors:
@@ -238,9 +232,7 @@ def store_scaling_factors_in_database(
     """
     with Session(engine) as session:
         # Create or get the File record.
-        file_record = session.exec(
-            select(File).where(File.path == str(original_file))
-        ).first()
+        file_record = session.exec(select(File).where(File.path == str(original_file))).first()
         if not file_record:
             file_record = File(filename=original_file.name, path=str(original_file))
             session.add(file_record)
@@ -256,24 +248,19 @@ def store_scaling_factors_in_database(
 
             # Store original values
             original_value_records.extend([
-                OriginalValue(property_id=property_record.id, value=value)
-                for value in values
+                OriginalValue(property_id=property_record.id, value=value) for value in values
             ])
 
             # Store 2K scaling factors
             if prop in scale_2k:
                 scaling_factor_2k_records.append(
-                    ScalingFactor(
-                        property_id=property_record.id, resolution="2K", **scale_2k[prop]
-                    )
+                    ScalingFactor(property_id=property_record.id, resolution="2K", **scale_2k[prop])
                 )
 
             # Store 4K scaling factors
             if prop in scale_4k:
                 scaling_factor_4k_records.append(
-                    ScalingFactor(
-                        property_id=property_record.id, resolution="4K", **scale_4k[prop]
-                    )
+                    ScalingFactor(property_id=property_record.id, resolution="4K", **scale_4k[prop])
                 )
 
         session.add_all(original_value_records)
@@ -365,9 +352,7 @@ def scale_positional_values_worker(args: tuple[Path, Path, Path, str]) -> None:
 
     except Exception as error:
         log.exception(
-            "An unexpected error occurred while scaling file: %s",
-            input_file,
-            exc_info=error,
+            "An unexpected error occurred while scaling file: %s", input_file, exc_info=error
         )
         raise
 
@@ -414,9 +399,7 @@ def scale_positional_values(
                 (input_directory, output_directory, input_file, resolution)
                 for input_file in input_files
             ]
-            results = list(
-                executor.map(scale_positional_values_worker, args, chunksize=10)
-            )
+            results = list(executor.map(scale_positional_values_worker, args, chunksize=10))
 
             # Consume the iterator to trigger any exceptions.
             for _ in results:
@@ -424,10 +407,7 @@ def scale_positional_values(
 
     except FileNotFoundError as error:
         log.exception(
-            "No %s files found in %s.",
-            input_format.upper(),
-            input_directory,
-            exc_info=error,
+            "No %s files found in %s.", input_format.upper(), input_directory, exc_info=error
         )
         sys.exit()
     except ValueError as error:
@@ -469,9 +449,7 @@ def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
 
     try:
         # Check if all relevant files exist, skip if any are missing.
-        if not all(
-            file.exists() for file in [original_file, scaled_2k_file, scaled_4k_file]
-        ):
+        if not all(file.exists() for file in [original_file, scaled_2k_file, scaled_4k_file]):
             log.warning("Skipping %s due to missing files.", original_file.name)
             return
 
@@ -481,13 +459,9 @@ def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
         scaled_4k_values = extract_positional_values(scaled_4k_file)
 
         # Check if any content is None, skip if so.
-        if any(
-            values is None
-            for values in [original_values, scaled_2k_values, scaled_4k_values]
-        ):
+        if any(values is None for values in [original_values, scaled_2k_values, scaled_4k_values]):
             log.warning(
-                "Skipping file %s due to missing content in one or more versions.",
-                original_file,
+                "Skipping file %s due to missing content in one or more versions.", original_file
             )
             return
 
@@ -496,9 +470,7 @@ def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
         scale_4k = calculate_property_scaling(original_values, scaled_4k_values)
 
         # Store results in the database
-        store_scaling_factors_in_database(
-            original_file, original_values, scale_2k, scale_4k
-        )
+        store_scaling_factors_in_database(original_file, original_values, scale_2k, scale_4k)
 
         log.info("Stored scaling factors for %s in the database.", original_file.name)
 
@@ -558,16 +530,10 @@ def calculate_scaling_factors(
                 )
                 # Only include files that have both 2K and 4K scaled versions.
                 for original_file in original_files
-                if (
-                    scaled_2k_directory / original_file.relative_to(original_directory)
-                ).exists()
-                and (
-                    scaled_4k_directory / original_file.relative_to(original_directory)
-                ).exists()
+                if (scaled_2k_directory / original_file.relative_to(original_directory)).exists()
+                and (scaled_4k_directory / original_file.relative_to(original_directory)).exists()
             ]
-            results = list(
-                executor.map(calculate_scaling_factors_worker, args, chunksize=10)
-            )
+            results = list(executor.map(calculate_scaling_factors_worker, args, chunksize=10))
 
             # Consume the iterator to trigger any exceptions.
             for _ in results:
@@ -577,12 +543,9 @@ def calculate_scaling_factors(
 
     except FileNotFoundError as error:
         log.exception(
-            "No matching %s files found in the directories.",
-            input_format.upper(),
-            exc_info=error,
+            "No matching %s files found in the directories.", input_format.upper(), exc_info=error
         )
     except Exception as error:
         log.exception(
-            "An unexpected error occurred while calculating scaling factors.",
-            exc_info=error,
+            "An unexpected error occurred while calculating scaling factors.", exc_info=error
         )

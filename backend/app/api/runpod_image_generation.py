@@ -7,7 +7,7 @@ insert more descriptive explanation here, max 3 rows with max 100 words each row
 """
 
 import torch
-from diffusers import FlowMatchEulerDiscreteScheduler, StableDiffusion3Pipeline, schedulers
+from diffusers import FlowMatchEulerDiscreteScheduler, StableDiffusion3Pipeline
 
 torch.set_float32_matmul_precision("high")
 

@@ -153,20 +153,12 @@ def text_positional_value_scaling() -> None:
     log.info("Initiating text processing (scaling) workflow...")
 
     # Scale positional values in GUI and GFX text files (for 4K monitors).
-    original_text.scale_positional_values(
-        config.INPUT_DIR, config.OUTPUT_DIR_4K, "GUI", 1.4
-    )
-    original_text.scale_positional_values(
-        config.INPUT_DIR, config.OUTPUT_DIR_4K, "GFX", 1.4
-    )
+    original_text.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_4K, "GUI", 1.4)
+    original_text.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_4K, "GFX", 1.4)
 
     # Scale positional values in GUI and GFX text files (for 2K monitors).
-    original_text.scale_positional_values(
-        config.INPUT_DIR, config.OUTPUT_DIR_2K, "GUI", 1.2
-    )
-    original_text.scale_positional_values(
-        config.INPUT_DIR, config.OUTPUT_DIR_2K, "GFX", 1.2
-    )
+    original_text.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2K, "GUI", 1.2)
+    original_text.scale_positional_values(config.INPUT_DIR, config.OUTPUT_DIR_2K, "GFX", 1.2)
 
 
 # Used to derive an appropriate scaling factor by comparing how other mods (e.g., "Proper 2K UI") did it.

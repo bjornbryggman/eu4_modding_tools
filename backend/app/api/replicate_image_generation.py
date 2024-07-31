@@ -65,9 +65,7 @@ async def image_generation(image_model: str, input_params: dict) -> str:
     except TypeError as error:
         log.exception("Invalid data type provided.", exc_info=error)
     except Exception as error:
-        log.exception(
-            "An unexpected error occurred during the process execution.", exc_info=error
-        )
+        log.exception("An unexpected error occurred during the process execution.", exc_info=error)
 
     else:
         if not output_url.startswith(("http:", "https:")):

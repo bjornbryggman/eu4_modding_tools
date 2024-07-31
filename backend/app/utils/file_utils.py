@@ -57,9 +57,7 @@ def read_file(file_path: Path) -> str:
         with Path(file_path).open("rb") as file:
             return file.read().decode("utf-8", errors="replace")
     except Exception as error:
-        log.exception(
-            "Failed to read file even in binary mode: %s", file_path, exc_info=error
-        )
+        log.exception("Failed to read file even in binary mode: %s", file_path, exc_info=error)
 
 
 # ====================================================#
@@ -108,9 +106,7 @@ def write_file(file_path: Path, content: str) -> None:
         with Path(file_path).open("wb") as file:
             file.write(content.encode("utf-8", errors="replace"))
     except Exception as error:
-        log.exception(
-            "Failed to write file even in binary mode: %s", file_path, exc_info=error
-        )
+        log.exception("Failed to write file even in binary mode: %s", file_path, exc_info=error)
 
 
 def unzip_files(input_directory: Path, output_directory: Path) -> None:
@@ -148,13 +144,9 @@ def unzip_files(input_directory: Path, output_directory: Path) -> None:
                 log.debug("Extracted files from %s to %s", zip_file, output_path)
 
     except FileNotFoundError as error:
-        log.exception(
-            "No .zip files found in %s, skipping...", input_directory, exc_info=error
-        )
+        log.exception("No .zip files found in %s, skipping...", input_directory, exc_info=error)
     except PermissionError as error:
-        log.exception(
-            "Permission denied when accessing file: %s", input_directory, exc_info=error
-        )
+        log.exception("Permission denied when accessing file: %s", input_directory, exc_info=error)
         sys.exit()
     except OSError as error:
         log.exception("Error processing %s.", input_directory, exc_info=error)
