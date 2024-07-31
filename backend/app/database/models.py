@@ -22,6 +22,7 @@ SQLModel.metadata.create_all(engine)
 #               Models used in 'events_script.py'               #
 # ============================================================= #
 
+
 class Event(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     origin: str

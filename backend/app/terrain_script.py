@@ -5,6 +5,7 @@ Insert succinct one-liner here (no more than 60 characters).
 
 Insert more descriptive explanation of the module here, max 4 rows, max 100 characters per row.
 """
+
 import os
 
 import structlog

@@ -143,9 +143,7 @@ def parse_entity_file(
 
 
 def parse_terrain_file(
-    input_file: Path,
-    regex_pattern: str,
-    terrain_types_regex_pattern: str,
+    input_file: Path, regex_pattern: str, terrain_types_regex_pattern: str
 ) -> None:
     """
     Parses the terrain.txt file and updates the database with terrain information.
