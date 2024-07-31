@@ -1,0 +1,82 @@
+# GitHub Actions is an automation tool that allows you to define workflows for your software projects. 
+# These workflows can automatically run tasks when certain events occur in your repository.
+
+# Workflow name.
+name: Main
+
+# Triggers.
+on:
+  # Runs when code is pushed to the "main" branch.
+  push:
+    branches:
+      - "main"
+  # Runs when a pull request to the "main" branch is marked as closed.
+  pull_request_target:
+    branches:
+      - "main"
+    types:
+      - closed
+  # Can be manually triggered.
+  workflow_dispatch:
+
+# Jobs.
+jobs:
+  release:
+    # Runner.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    
+    steps:
+      # This step fetches your repository's code into the runner.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      # This step install Python and initiates a virtual environment via Rye.
+      - name: Install Python via Rye (Python manager)
+        run: |
+          curl -sSf https://rye.astral.sh/get | RYE_VERSION="0.37.0" RYE_INSTALL_OPTION="--yes" bash
+          echo "$HOME/.rye/shims" >> $GITHUB_PATH
+
+      # This step installs the Python packages listed in pyproject.toml.
+      - name: Install Python packages
+        working-directory: ./backend
+        run: rye sync
+  
+      # This step runs the Ruff Python linter & formatter.
+      - name: Run Ruff linter & formatter
+        working-directory: ./backend
+        run: |
+          ruff check --fix-only --preview .
+          ruff format .
+
+      # This step updates the CHANGELOG.md file with the latest changes.
+      - name: Update CHANGELOG.md
+        uses: tiangolo/latest-changes@0.3.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          latest_changes_file: CHANGELOG.md
+          latest_changes_header: '# Changelog'
+          end_regex: '^## '
+          labels: >
+            [
+              {"label": "breaking", "header": "Breaking Changes"},
+              {"label": "security", "header": "Security Fixes"},
+              {"label": "feature", "header": "Features"},
+              {"label": "bug", "header": "Fixes"},
+              {"label": "refactor", "header": "Refactors"},
+              {"label": "upgrade", "header": "Upgrades"},
+              {"label": "docs", "header": "Docs"},
+              {"label": "lang-all", "header": "Translations"},
+              {"label": "internal", "header": "Internal"},
+            ]
+          label_header_prefix: '### '
+
+      # This step automatically commits changes back to the repository.
+      - uses: stefanzweifel/git-auto-commit-action@v5
+
+

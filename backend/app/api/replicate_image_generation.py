@@ -4,7 +4,6 @@
 Replicate API client module.
 
 Asynchronous client for interacting with OpenRouter models.
-
 """
 
 import replicate

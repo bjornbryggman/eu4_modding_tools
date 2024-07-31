@@ -2,6 +2,7 @@ every province with a custom image must be assigned its own category in the terr
 
 we need to generate terrain picture with the same name as the terrain type, and add that to the localization.
 
+e.g. "fey_gladeway" terrain would need to be included in the combat.gfx and colonisationpanel.gfx texts, respectively.
 
 it also needs to be added to combat terrain gfx.
 
