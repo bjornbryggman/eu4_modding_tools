@@ -22,9 +22,7 @@ log = structlog.stdlib.get_logger(__name__)
 # ====================================================#
 
 
-def completion_request(
-    prompt: list[dict], model: str, api_key: str, stream: bool
-) -> tuple:
+def completion_request(prompt: list[dict], model: str, api_key: str, stream: bool) -> tuple:
     """
     Makes a completion request to the OpenRouter API and returns the response.
 
@@ -86,17 +84,14 @@ def completion_request(
 
     except openai.OpenAIError as error:
         log.exception(
-            "APIError occurred while interacting with the OpenRouter model.",
-            exc_info=error,
+            "APIError occurred while interacting with the OpenRouter model.", exc_info=error
         )
     except requests.RequestException as error:
         log.exception("Request to the OpenRouter API failed.", exc_info=error)
     except ValueError as error:
         log.exception("Invalid input parameter provided.", exc_info=error)
     except Exception as error:
-        log.exception(
-            "An unexpected error occurred during the process execution.", exc_info=error
-        )
+        log.exception("An unexpected error occurred during the process execution.", exc_info=error)
 
     else:
         return (cohesive_text, formatted_string)

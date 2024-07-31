@@ -64,9 +64,7 @@ def init_logger(log_level: int, log_directory: Path) -> None:
 
     if sys.stderr.isatty():
         logging.basicConfig(
-            level=log_level,
-            handlers=[logging.StreamHandler(sys.stdout)],
-            format="%(message)s",
+            level=log_level, handlers=[logging.StreamHandler(sys.stdout)], format="%(message)s"
         )
 
     else:
@@ -77,14 +75,11 @@ def init_logger(log_level: int, log_directory: Path) -> None:
         file_handler.setLevel(log_level)
         file_handler.setFormatter(
             structlog.stdlib.ProcessorFormatter(
-                processor=structlog.processors.JSONRenderer(),
-                foreign_pre_chain=shared_processors,
+                processor=structlog.processors.JSONRenderer(), foreign_pre_chain=shared_processors
             )
         )
 
-        logging.basicConfig(
-            level=log_level, handlers=[file_handler], format="%(message)s"
-        )
+        logging.basicConfig(level=log_level, handlers=[file_handler], format="%(message)s")
 
     structlog.configure(
         processors=console_processors if sys.stderr.isatty() else file_processors,

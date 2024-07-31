@@ -461,6 +461,7 @@ def set_database_relationships() -> None:
 
     log.info("Database relationships set successfully.")
 
+
 # ===============================================#
 #                   Main script                  #
 # ===============================================#

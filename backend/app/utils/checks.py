@@ -30,8 +30,7 @@ def check_for_wand_package() -> bool:
 
     except ImportError as error:
         log.exception(
-            "Wand library not found. Please ensure it's correctly installed.",
-            exc_info=error,
+            "Wand library not found. Please ensure it's correctly installed.", exc_info=error
         )
         return False
 

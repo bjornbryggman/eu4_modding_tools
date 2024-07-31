@@ -84,9 +84,7 @@ def image_conversion_worker(args: tuple) -> None:
 
         # Run Texconv command.
         subprocess.run(texconv_command, check=True, capture_output=True, text=True)
-        log.debug(
-            "Successfully converted %s to %s.", input_file.name, output_format.upper()
-        )
+        log.debug("Successfully converted %s to %s.", input_file.name, output_format.upper())
 
     # Fallback to using Imagemagick in case of problems.
     except subprocess.CalledProcessError as error:
@@ -118,15 +116,11 @@ def image_conversion_worker(args: tuple) -> None:
 
         except Exception as error:
             log.exception(
-                "Both Texconv and Imagemagick failed to convert %s.",
-                input_file,
-                exc_info=error,
+                "Both Texconv and Imagemagick failed to convert %s.", input_file, exc_info=error
             )
 
     except PermissionError as error:
-        log.exception(
-            "Permission denied when accessing file: %s", input_file, exc_info=error
-        )
+        log.exception("Permission denied when accessing file: %s", input_file, exc_info=error)
         sys.exit()
     except (FileOpenError, WandError, OSError) as error:
         log.exception("Error processing %s.", input_file, exc_info=error)
@@ -183,14 +177,10 @@ def image_resizing_worker(args: tuple) -> None:
             )
             img.save(filename=str(output_path))
 
-        log.debug(
-            "Successfully resized %s by a factor of %s.", input_file.name, scaling_factor
-        )
+        log.debug("Successfully resized %s by a factor of %s.", input_file.name, scaling_factor)
 
     except PermissionError as error:
-        log.exception(
-            "Permission denied when accessing file: %s", input_file, exc_info=error
-        )
+        log.exception("Permission denied when accessing file: %s", input_file, exc_info=error)
         sys.exit()
     except CorruptImageError as error:
         log.exception("Failed to read image file %s.", input_file, exc_info=error)
@@ -267,10 +257,7 @@ def image_conversion(
 
     except FileNotFoundError as error:
         log.exception(
-            "No %s files found in %s.",
-            input_format.upper(),
-            input_directory,
-            exc_info=error,
+            "No %s files found in %s.", input_format.upper(), input_directory, exc_info=error
         )
         sys.exit()
     except Exception as error:
@@ -327,13 +314,7 @@ def image_resizing(
         input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
         with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
             args = [
-                (
-                    input_file,
-                    input_directory,
-                    output_directory,
-                    scaling_factor,
-                    chosen_filter,
-                )
+                (input_file, input_directory, output_directory, scaling_factor, chosen_filter)
                 for input_file in input_files
             ]
             futures = list(executor.map(image_resizing_worker, args, chunksize=10))
@@ -344,16 +325,11 @@ def image_resizing(
 
     except FileNotFoundError as error:
         log.exception(
-            "No %s files found in %s.",
-            input_format.upper(),
-            input_directory,
-            exc_info=error,
+            "No %s files found in %s.", input_format.upper(), input_directory, exc_info=error
         )
         sys.exit()
     except ValueError as error:
-        log.exception(
-            "'%s' is not a valid scaling factor.", scaling_factor, exc_info=error
-        )
+        log.exception("'%s' is not a valid scaling factor.", scaling_factor, exc_info=error)
         sys.exit()
     except Exception as error:
         log.exception("An unexpected error occurred.", exc_info=error)

@@ -24,7 +24,9 @@ def get_toml_variable(file_path: Path, variable_name: str, **kwargs: dict[str, A
     return variable
 
 
-def get_yaml_variable(file_path: Path, variable_name: str, **kwargs: dict[str, dict[str, Any]]) -> dict:
+def get_yaml_variable(
+    file_path: Path, variable_name: str, **kwargs: dict[str, dict[str, Any]]
+) -> dict:
     """Loads a variable from a yaml file and replaces placeholders."""
     try:
         with Path.open(file_path, encoding="locale") as file:
