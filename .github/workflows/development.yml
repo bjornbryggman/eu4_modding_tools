@@ -42,8 +42,8 @@ jobs:
       - name: Run Ruff linter & formatter
         working-directory: ./backend
         run: |
-          ruff check --fix-only --preview .
-          ruff format .
+          rye run ruff check --fix-only --preview .
+          rye run ruff format .
 
       # This step automatically commits changes back to the repository.
       - uses: stefanzweifel/git-auto-commit-action@v5

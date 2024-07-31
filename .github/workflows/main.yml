@@ -51,8 +51,8 @@ jobs:
       - name: Run Ruff linter & formatter
         working-directory: ./backend
         run: |
-          ruff check --fix-only --preview .
-          ruff format .
+          rye run ruff check --fix-only --preview .
+          rye run ruff format .
 
       # This step updates the CHANGELOG.md file with the latest changes.
       - name: Update CHANGELOG.md
