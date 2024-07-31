@@ -40,7 +40,6 @@ managed = true
 generate-hashes = true
 dev-dependencies = [
     "coverage",
-    "faker",
     "hypothesis",
     "pytest",
     "pytest-asyncio",
@@ -51,12 +50,6 @@ dev-dependencies = [
 "check:ruff" = "ruff ."
 "fix:ruff" = "ruff --fix ."
 "format:ruff" = "ruff format"
-
-format = { chain = [
-  "check:ruff",
-  "fix:ruff",
-  "format:ruff",
-]}
 
 [tool.pytest.ini_options]
 testpaths = ["*tests*"]

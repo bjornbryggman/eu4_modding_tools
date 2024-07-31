@@ -17,15 +17,15 @@ from statistics import mean, median, stdev
 import structlog
 from sqlmodel import Session, select
 
-from app.core.db import File, OriginalValue, Property, ScalingFactor, engine
+from app.database.models import File, OriginalValue, Property, ScalingFactor, engine
 from app.utils import file_utils
 
 # Initialize logger for this module.
 log = structlog.stdlib.get_logger(__name__)
 
-# ===============================#
+# ============================== #
 #        Helper Functions        #
-# ===============================#
+# ============================== #
 
 
 def apply_scaling_factors(
@@ -294,9 +294,9 @@ def _create_or_get_property(session: Session, prop: str, file_id: int) -> Proper
     return property_record
 
 
-# ============================================================#
+# =========================================================== #
 #        Worker function for scaling positional values        #
-# ============================================================#
+# =========================================================== #
 
 
 def scale_positional_values_worker(args: tuple[Path, Path, Path, str]) -> None:
@@ -357,9 +357,9 @@ def scale_positional_values_worker(args: tuple[Path, Path, Path, str]) -> None:
         raise
 
 
-# ============================================================#
+# =========================================================== #
 #        Caller function for scaling positional values        #
-# ============================================================#
+# =========================================================== #
 
 
 def scale_positional_values(
@@ -417,9 +417,9 @@ def scale_positional_values(
         log.exception("An unexpected error occurred.", exc_info=error)
 
 
-# ==============================================================#
+# ============================================================= #
 #        Worker function for comparing positional values        #
-# ==============================================================#
+# ============================================================= #
 
 
 def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
@@ -479,9 +479,9 @@ def calculate_scaling_factors_worker(args: tuple[Path, Path, Path]) -> None:
         raise
 
 
-# ==============================================================#
+# ============================================================= #
 #        Caller function for comparing positional values        #
-# ==============================================================#
+# ============================================================= #
 
 
 def calculate_scaling_factors(

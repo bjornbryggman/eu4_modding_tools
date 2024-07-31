@@ -5,7 +5,6 @@ This module provides a client for interacting with the OpenRouter API.
 
 It includes functions for making completion requests to the OpenRouter API and
 querying the cost of those requests.
-
 """
 
 import openai
