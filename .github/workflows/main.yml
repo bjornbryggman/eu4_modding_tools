@@ -27,8 +27,6 @@ jobs:
       # This step fetches your repository's code into the runner.
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
 
       # This step install Python and initiates a virtual environment via Rye.
       - name: Install Python via Rye (Python manager)
