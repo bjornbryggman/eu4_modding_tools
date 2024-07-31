@@ -23,9 +23,9 @@ from app.utils.checks import check_for_texconv_path, check_for_wand_package
 log = structlog.stdlib.get_logger(__name__)
 
 
-# ====================================================#
+# =================================================== #
 #        Worker function for converting images        #
-# ====================================================#
+# =================================================== #
 
 
 def image_conversion_worker(args: tuple) -> None:
@@ -128,9 +128,9 @@ def image_conversion_worker(args: tuple) -> None:
         log.exception("Unexpected error processing %s.", input_file, exc_info=error)
 
 
-# ==================================================#
+# ================================================= #
 #        Worker function for resizing images        #
-# ==================================================#
+# ================================================= #
 
 
 def image_resizing_worker(args: tuple) -> None:
@@ -190,9 +190,9 @@ def image_resizing_worker(args: tuple) -> None:
         log.exception("Unexpected error processing %s.", input_file, exc_info=error)
 
 
-# ====================================================#
+# =================================================== #
 #        Caller function for converting images        #
-# ====================================================#
+# =================================================== #
 
 
 def image_conversion(
@@ -264,9 +264,9 @@ def image_conversion(
         log.exception("An unexpected error occurred.", exc_info=error)
 
 
-# =====================================================#
+# =================================================== #
 #         Caller function for resizing images         #
-# =====================================================#
+# =================================================== #
 
 
 def image_resizing(

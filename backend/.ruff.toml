@@ -1,4 +1,4 @@
-required-version = ">=0.4.10"
+required-version = ">=0.5"
 target-version = "py312"
 line-length = 100
 indent-width = 4
@@ -16,8 +16,38 @@ skip-magic-trailing-comma = true
 preview = true
 
 [lint]
-select = ["ALL", "D213", "D400", "D407", "D408", "D409", "UP"]
-ignore = ["D206", "D212", "D300", "D417", "COM812", "COM819","E111", "E114", "E117", "E265", "FBT", "ISC001", "ISC002", "S603", "Q000", "Q001", "Q002", "Q003", "W191"]
+select = [
+    "ALL", 
+    "D213", 
+    "D400", 
+    "D407", 
+    "D408", 
+    "D409", 
+    "UP"
+    ]
+    
+ignore = [
+    "DOC502",
+    "D206",
+    "D212",
+    "D300",
+    "D417",
+    "COM812",
+    "COM819",
+    "E111",
+    "E114",
+    "E117",
+    "E265",
+    "FBT",
+    "ISC001",
+    "ISC002",
+    "S603",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "W191",
+]
 fixable = ["ALL"]
 task-tags = ["TODO"]
 
@@ -44,7 +74,13 @@ strict = true
 
 [lint.isort]
 extra-standard-library = ["path"]
-section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+section-order = [
+    "future",
+    "standard-library",
+    "third-party",
+    "first-party",
+    "local-folder",
+]
 split-on-trailing-comma = false
 
 [lint.pep8-naming]
@@ -58,4 +94,4 @@ max-doc-length = 120
 convention = "google"
 
 [lint.pylint]
-max-args = 5
+max-args = 7
