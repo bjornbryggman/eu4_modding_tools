@@ -6,8 +6,7 @@ name: Main
 
 # Triggers.
 on:
-  # Runs when code is pushed to the "main" branch.
-  push:
+  # Runs when pull requests are merged into the main branch.
   pull_request_target:
     branches:
       - "main"
