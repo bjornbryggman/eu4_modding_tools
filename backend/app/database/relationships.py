@@ -1,9 +1,11 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Insert succinct one-liner here (no more than 60 characters).
+Establishes relationships between geographical entities in the database.
 
-Insert more descriptive explanation of the module here, max 4 rows, max 100 characters per row.
+This module provides a function to set relationships between provinces, areas,
+regions, superregions, and continents based on their foreign keys in the database.
+It ensures that all related entities have their relationships set correctly.
 """
 
 import structlog
@@ -24,24 +26,30 @@ log = structlog.stdlib.get_logger(__name__)
 
 def set_geographical_relationships() -> None:
     """
-    Sets relationships between geographical entities in the database.
+    Establish relationships between geographical entities in the database.
 
-    This function iterates through all provinces in the database and sets up
-    proper relationships between provinces, areas, regions, superregions and
-    continents based on their respective foreign keys.
+    Process:
+    -------
+    -------
+        - Retrieves all provinces from the database.
+        - For each province, it sets relationships between province, area, region, superregion, and continent based on their foreign keys.
+        - Ensures that all related entities have their continent set correctly.
 
     Args:
     ----
-    - None.
+    ----
+        - None.
 
     Returns:
     -------
-    - None.
+    -------
+        - None.
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs.
-    - SQLAlchemyError: If there's an issue with database operations.
+    Exceptions:
+    ----------
+    ----------
+        - SQLAlchemyError: Raised when a database-related error occurs.
+        - Exception: Raised for any other unexpected errors during execution.
     """
     try:
         with db_utils.session_scope() as session:

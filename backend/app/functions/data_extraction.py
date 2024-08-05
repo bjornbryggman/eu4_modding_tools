@@ -1,10 +1,11 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Extracts data and populates a database.
+Parses game data files and updates the database with extracted information.
 
-This module provides functions for parsing various EU4 game files
-and populating a database with the extracted data.
+This module provides functions for parsing various game data files, including
+positions, entities, and terrain information. It extracts relevant data using
+regular expressions and updates the corresponding database models.
 """
 
 import re
@@ -28,27 +29,32 @@ log = structlog.stdlib.get_logger(__name__)
 
 def parse_positions_file(input_file: Path, regex_pattern: str) -> None:
     """
-    Parses the positions.txt file and updates the database with Province entries.
+    Parse the positions.txt file and update the database with Province entries.
 
-    This function reads the positions.txt file, which contains province definitions
-    including their IDs and names. It creates or updates Province entries in the
-    database based on this information.
+    Process:
+    -------
+    -------
+        - Reads the positions.txt file and extracts province definitions using a regular expression.
+        - Creates or updates Province entries in the database based on the extracted information.
 
     Args:
     ----
-    - input_file (Path): The path to the positions.txt file.
-    - regex_pattern (str): The regular expression pattern to match entity definitions.
+    ----
+        - input_file (Path): The path to the positions.txt file to be parsed.
+        - regex_pattern (str): The regular expression pattern used to extract province definitions from the file.
 
     Returns:
     -------
-    - None.
+    -------
+        - None: This function does not return any value, but updates the database instead.
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs.
-    - OSError: If an error occurs during file operations.
-    - PermissionError: If there's a permission issue when accessing files.
-    - ValueError: If there's an issue with data processing or unexpected data format.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: Raised for any unexpected errors during execution.
+        - OSError: Raised when an error occurs while reading the file.
+        - PermissionError: Raised when there is no permission to read the file.
+        - ValueError: Raised when invalid data is encountered during parsing.
     """
     try:
         content = read_file(input_file)
@@ -82,30 +88,41 @@ def parse_entity_file(
     child_identifier: str | None = None,
 ) -> None:
     """
-    Parses a file containing entity definitions and updates the database.
+    Parse an entity file, extract definitions, and update the database with parent and child entities.
 
-    This function reads an input file, extracts entity definitions using a regex pattern,
-    and creates parent and child entities in the database. It supports both verbose and
-    non-verbose modes for child entity identification.
+    Process:
+    -------
+    -------
+        - Reads the input file and extracts entity definitions using a provided regex pattern.
+        - Creates parent entities in the database.
+        - Identifies child entities based on either verbose mode (using a child identifier) or
+          non-verbose mode (using IDs).
+        - Associates child entities with their respective parent entities in the database.
 
     Args:
     ----
-    - input_file (str): The path to the file containing entity definitions.
-    - regex_pattern (str): The regular expression pattern to match entity definitions.
-    - parent_model (type): The SQLModel class representing the parent entity (e.g., SuperRegion).
-    - child_model (type): The SQLModel class representing the child entity (e.g., Region).
-    - child_identifier (str): The string pattern to identify child entities (e.g., "_region").
+    ----
+        - input_file (str): Path to the file containing entity definitions.
+        - regex_pattern (str): Regular expression pattern to extract entity definitions.
+        - parent_model (type): Model class for parent entities.
+        - child_model (type): Model class for child entities.
+        - verbose (bool, optional): Flag to enable verbose mode for child entity identification.
+          Defaults to False.
+        - child_identifier (str | None, optional): Identifier used in verbose mode to identify
+          child entities. Defaults to None.
 
     Returns:
     -------
-    - None.
+    -------
+        - None
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs.
-    - OSError: If an error occurs during file operations.
-    - PermissionError: If there's a permission issue when accessing files.
-    - ValueError: If there's an issue with data processing or unexpected data format.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: General exception for any errors during processing.
+        - OSError: Raised for operating system-related errors.
+        - PermissionError: Raised for permission-related errors.
+        - ValueError: Raised for invalid input values.
     """
     try:
         content = read_file(input_file)
@@ -142,33 +159,37 @@ def parse_entity_file(
 # ===================================================================#
 
 
-def parse_terrain_file(
-    input_file: Path, regex_pattern: str, terrain_types_regex_pattern: str
-) -> None:
+def parse_terrain_file(input_file: Path, regex_pattern: str, terrain_types_regex_pattern: str) -> None:
     """
-    Parses the terrain.txt file and updates the database with terrain information.
+    Parse terrain file and update database with terrain information.
 
-    This function reads the terrain.txt file, extracts terrain types and their
-    properties, creates or updates Terrain entries in the database, and also
-    handles terrain overrides for specific provinces.
+    Process:
+    -------
+    -------
+        - Reads the terrain file and extracts terrain types and properties.
+        - Creates or updates Terrain entries in the database.
+        - Handles terrain overrides for specific provinces.
 
     Args:
     ----
-    - input_file (Path): The path to the terrain.txt file.
-    - regex_pattern (str): The regular expression pattern to match entity definitions.
-    - terrain_types_regex_pattern (str): The regular expression pattern to match terrain types.
-    - update_regex_pattern (str): The regular expression pattern used when updating the terrain.txt.
+    ----
+        - input_file (Path): The path to the terrain file to be parsed.
+        - regex_pattern (str): The regular expression pattern to match the categories block in the file.
+        - terrain_types_regex_pattern (str): The regular expression pattern to match terrain types
+          within the categories block.
 
     Returns:
     -------
-    - None.
+    -------
+        - None
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs.
-    - OSError: If an error occurs during file operations.
-    - PermissionError: If there's a permission issue when accessing files.
-    - ValueError: If there's an issue with data processing or unexpected data format.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: Raised for any unexpected errors during execution.
+        - OSError: Raised when an operating system-related error occurs.
+        - PermissionError: Raised when a permission-related error occurs.
+        - ValueError: Raised when an invalid value is encountered.
     """
     try:
         content = read_file(input_file)
@@ -191,31 +212,33 @@ def parse_terrain_file(
         return terrain_data
 
 
-def process_terrain_types(
-    terrain_types: list[tuple[str, str]],
-) -> tuple[dict[str, dict], list[Terrain]]:
+def process_terrain_types(terrain_types: list[tuple[str, str]]) -> tuple[dict[str, dict], list[Terrain]]:
     """
-    Processes terrain types and extracts properties and overrides.
+    Process terrain types to extract properties and overrides for provinces.
 
-    This function iterates through the extracted terrain types, extracting
-    properties and identifying terrain overrides for specific provinces. It
-    returns a dictionary of terrain data and a list of custom terrains
-    created for overrides.
+    Process:
+    -------
+    -------
+        - Iterates through terrain types, extracting properties and identifying overrides.
+        - Creates custom terrains for province-specific overrides.
+        - Returns a dictionary of terrain data and a list of custom terrains.
 
     Args:
     ----
-    - terrain_types (list[tuple[str, str]]): A list of tuples containing
-      terrain names and their content from the terrain.txt file.
+    ----
+        - terrain_types (list[tuple[str, str]]): A list of tuples containing terrain names and their contents.
 
     Returns:
     -------
-    - dict[str, dict]: A dictionary mapping terrain names to their properties.
-    - list[Terrain]: A list of custom terrain objects created for overrides.
+    -------
+        - tuple[dict[str, dict], list[Terrain]]: A tuple containing a dictionary of terrain data and a list
+          of custom terrains.
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs.
-    - ValueError: If there's an issue with data processing or unexpected data format.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: Raised for any unexpected errors during processing.
+        - ValueError: Raised for invalid input parameters.
     """
     terrain_data = {}
     custom_terrains = []
@@ -239,9 +262,7 @@ def process_terrain_types(
                     custom_properties["terrain_override"] = f"{{ {province_id} }}"
 
                     custom_terrain = Terrain(
-                        name=custom_terrain_name,
-                        original_terrain=terrain_name,
-                        properties=custom_properties,
+                        name=custom_terrain_name, original_terrain=terrain_name, properties=custom_properties
                     )
                     custom_terrains.append(custom_terrain)
 
@@ -258,59 +279,52 @@ def process_terrain_types(
         return terrain_data, custom_terrains
 
 
-def update_database_with_terrain(
-    terrain_data: dict[str, dict], custom_terrains: list[Terrain]
-) -> None:
+def update_database_with_terrain(terrain_data: dict[str, dict], custom_terrains: list[Terrain]) -> None:
     """
-    Updates the database with terrain information and overrides.
+    Update the database with terrain information and overrides.
 
-    This function updates or creates Terrain entries in the database based on
-    the processed terrain data and custom terrain overrides. It also links
-    custom terrains to their corresponding provinces.
+    Process:
+    -------
+    -------
+        - Iterates through the provided terrain data, updating or creating Terrain entries in the database.
+        - For each custom terrain, links it to the corresponding province based on the 'terrain_override' property.
 
     Args:
     ----
-    - terrain_data (dict[str, dict]): A dictionary mapping terrain names
-      to their properties.
-    - custom_terrains (list[Terrain]): A list of custom terrain objects
-      created for overrides.
+    ----
+        - terrain_data (dict[str, dict]): A dictionary containing terrain names and their properties.
+        - custom_terrains (list[Terrain]): A list of custom Terrain objects to be added to the database.
 
     Returns:
     -------
-    - None.
+    -------
+        - None
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs.
-    - ValueError: If there's an issue with data processing or unexpected data format.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: Raised for any general errors during database operations.
+        - ValueError: Raised for specific errors related to data validation or processing.
     """
     try:
         with session_scope() as session:
             for terrain_name, properties in terrain_data.items():
-                original_terrain = session.exec(
-                    select(Terrain).where(Terrain.name == terrain_name)
-                ).first()
+                original_terrain = session.exec(select(Terrain).where(Terrain.name == terrain_name)).first()
                 if original_terrain:
                     original_terrain.properties = properties
                 else:
-                    original_terrain = Terrain(
-                        name=terrain_name, original_terrain=terrain_name, properties=properties
-                    )
+                    original_terrain = Terrain(name=terrain_name, original_terrain=terrain_name, properties=properties)
                     session.add(original_terrain)
 
             for custom_terrain in custom_terrains:
                 session.add(custom_terrain)
-                province_id = int(
-                    re.search(r"\d+", custom_terrain.properties["terrain_override"]).group()
-                )
+                province_id = int(re.search(r"\d+", custom_terrain.properties["terrain_override"]).group())
                 province = session.exec(select(Province).where(Province.id == province_id)).first()
                 if province:
                     province.terrain = custom_terrain
                 else:
                     log.warning(
-                        "Province with id %s not found for custom terrain %s.",
-                        province_id,
-                        custom_terrain.name,
+                        "Province with id %s not found for custom terrain %s.", province_id, custom_terrain.name
                     )
     except (Exception, ValueError) as error:
         log.exception("Error updating database with terrain types.", exc_info=error)

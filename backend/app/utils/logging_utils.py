@@ -13,29 +13,40 @@ from pathlib import Path
 
 import structlog
 
+# =============================================== #
+#                 Main Function                   #
+# =============================================== #
+
 
 def init_logger(log_level: int, log_directory: Path) -> None:
     """
-    Initializes a structured logger with console or file output.
+    Initialize a structured logger with console or file output.
 
-    This function sets up a logger with structlog, configuring it for either
-    console output (when running in a terminal) or file output (when not in a
-    terminal). Console output uses a human-friendly format, while file output
-    uses JSON format.
+    Process:
+    -------
+    -------
+        - Configures structlog with shared processors for common logging information.
+        - Sets up separate processors for console logging (human-friendly format) and file logging (JSON format).
+        - Determines the output mode based on whether the standard error stream is a terminal.
+        - If in a terminal, configures logging to the console with a human-readable format.
+        - If not in a terminal, creates a log directory if it doesn't exist, configures logging to a file in JSON format.
+        - Initializes structlog with the appropriate processors based on the output mode.
 
     Args:
     ----
-        log_level: An integer representing the logging level (e.g., logging.INFO).
-        log_directory: A Path object representing the directory where log files
-            will be stored if file logging is used.
+    ----
+        - log_level (int): The logging level to use (e.g., logging.INFO).
+        - log_directory (Path): The directory where log files will be stored if file logging is used.
 
     Returns:
     -------
-        None
+    -------
+        - None.
 
-    Raises:
-    ------
-        OSError: If there's an issue creating the log directory or file.
+    Exceptions:
+    ----------
+    ----------
+        - OSError: If there's an issue creating the log directory or file.
     """
     shared_processors = [
         structlog.stdlib.filter_by_level,
@@ -63,9 +74,7 @@ def init_logger(log_level: int, log_directory: Path) -> None:
     ]
 
     if sys.stderr.isatty():
-        logging.basicConfig(
-            level=log_level, handlers=[logging.StreamHandler(sys.stdout)], format="%(message)s"
-        )
+        logging.basicConfig(level=log_level, handlers=[logging.StreamHandler(sys.stdout)], format="%(message)s")
 
     else:
         log_directory.mkdir(parents=True, exist_ok=True)

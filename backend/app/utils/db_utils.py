@@ -1,9 +1,11 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Insert succinct one-liner here (no more than 60 characters).
+Provides database management functions and utilities for scaling operations.
 
-Insert more descriptive explanation of the module here, max 4 rows, max 100 characters per row.
+This module offers functions for interacting with the SQLite database, including
+creating the database schema and managing sessions. It also provides functions
+for retrieving and generating reports of scaling factors for different resolutions.
 """
 
 import json
@@ -17,13 +19,12 @@ from sqlmodel import Session, SQLModel, create_engine, select
 
 from app.database.models import File, Property, ScalingFactor
 
-# Initialize logger for this module.
+# Initialize logger for this module
 log = structlog.stdlib.get_logger(__name__)
 
-# Construct the SQLite URL.
+# Database configuration
 sqlite_url = "sqlite:///database/SQLite.db"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
-SQLModel.metadata.create_all(engine)
 
 
 # ========================================================== #
@@ -33,17 +34,28 @@ SQLModel.metadata.create_all(engine)
 
 def create_database() -> None:
     """
-    Creates the database tables if they don't exist.
+    Create the database schema based on the defined SQLModel models.
+
+    Process:
+    -------
+    -------
+        - Uses the SQLModel.metadata.create_all() function to create the database schema based on the defined models.
 
     Args:
     ----
-    - None
+    ----
+        - None.
 
     Returns:
     -------
-    - None
+    -------
+        - None.
+
+    Exceptions:
+    ----------
+    ----------
+        - None.
     """
-    engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
     SQLModel.metadata.create_all(engine)
 
 
@@ -52,21 +64,29 @@ def session_scope() -> Generator[Session, Any, None]:
     """
     Provides a transactional scope around a database session.
 
-    This context manager creates a new database session, yields it to the
-    caller, and automatically commits changes or rolls back in case of
-    exceptions.
+    Process:
+    -------
+    -------
+        - Creates a new database session using the provided engine.
+        - Yields the session to the caller, allowing for database operations within the context.
+        - Automatically commits changes to the database if no exceptions occur.
+        - Rolls back any changes if an exception is raised.
+        - Closes the session regardless of whether changes were committed or rolled back.
 
     Args:
     ----
-    - None.
+    ----
+        - None.
 
     Returns:
     -------
-    - Session: A database session within the transactional scope.
+    -------
+        - Generator[Session, Any, None]: A generator that yields a database session within the transactional scope.
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs during the session.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: If an unexpected error occurs during the session.
     """
     session = Session(engine)
     try:
@@ -86,27 +106,34 @@ def session_scope() -> Generator[Session, Any, None]:
 
 def get_scaling_factors(file_path: str, resolution: str) -> dict[str, float]:
     """
-    Retrieves scaling factors for a given file and resolution from the database.
 
-    It uses SQLModel's 'select' and 'join' to query the database
-    and returns a dictionary of scaling factors.
+    Retrieve scaling factors for a specific file and resolution from the database.
+
+    Process:
+    -------
+    -------
+        - Queries the database for scaling factors associated with the provided file path and resolution.
+        - Returns a dictionary mapping scaling factor names to their mean values.
 
     Args:
     ----
-    - file_path (str): The path to the file.
-    - resolution (str): The target resolution (e.g., "2K", "4K").
+    ----
+        - file_path (str): The path to the file for which scaling factors are required.
+        - resolution (str): The resolution for which scaling factors are required.
 
     Returns:
     -------
-    - dict[str, float]: A dictionary where keys are property names and values are
-    the corresponding scaling factors for the specified resolution.
+    -------
+        - dict[str, float]: A dictionary containing scaling factor names as keys and their mean values as values.
 
-    Raises:
-    ------
-    - Exception: If an error occurs during database interaction.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: Raised for any unexpected errors during database interaction.
+
     """
     try:
-        with Session(engine) as session:
+        with session_scope() as session:
             scaling_factors = session.exec(
                 select(ScalingFactor.name, ScalingFactor.mean)
                 .join(Property)
@@ -117,27 +144,37 @@ def get_scaling_factors(file_path: str, resolution: str) -> dict[str, float]:
             return dict(scaling_factors)
 
     except Exception as error:
-        log.exception(
-            "An unexpected error occurred while retrieving scaling factors.", exc_info=error
-        )
+        log.exception("An unexpected error occurred while retrieving scaling factors.", exc_info=error)
 
 
 def generate_scaling_report(resolution: str) -> None:
     """
-    Generates a report of scaling factors for the specified resolution.
+    Generate a report of scaling factors for a specified resolution.
 
-    It queries the database, retrieves the scaling data, and writes it to a JSON file.
+    Process:
+    -------
+    -------
+        - Queries the database for scaling factors associated with the specified resolution.
+        - Organizes the retrieved data into a dictionary, grouping scaling factors by file.
+        - Writes the structured report to a JSON file named according to the resolution.
 
     Args:
     ----
-    - resolution (str): The target resolution (e.g., "2K", "4K").
+    ----
+        - resolution (str): The target resolution for which the report is generated (e.g., "2K", "4K").
 
     Returns:
     -------
-    - None
+    -------
+        - None: The function generates a JSON file and does not return any value.
+
+    Exceptions:
+    ----------
+    ----------
+        - Exception: Raised for any unexpected errors during database interaction or file writing.
     """
     try:
-        with Session(engine) as session:
+        with session_scope() as session:
             scaling_data = session.exec(
                 select(
                     File.filename,
@@ -155,15 +192,7 @@ def generate_scaling_report(resolution: str) -> None:
 
             # Create a dictionary to store scaling data for each file.
             report = {}
-            for (
-                filename,
-                prop_name,
-                mean_factor,
-                median_factor,
-                std_dev,
-                min_factor,
-                max_factor,
-            ) in scaling_data:
+            for filename, prop_name, mean_factor, median_factor, std_dev, min_factor, max_factor in scaling_data:
                 if filename not in report:
                     report[filename] = {}
                 report[filename][prop_name] = {
@@ -181,6 +210,4 @@ def generate_scaling_report(resolution: str) -> None:
             log.info("Scaling report for %s resolution generated.", resolution)
 
     except Exception as error:
-        log.exception(
-            "An unexpected error occurred while generating the scaling report.", exc_info=error
-        )
+        log.exception("An unexpected error occurred while generating the scaling report.", exc_info=error)

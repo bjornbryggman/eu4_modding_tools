@@ -1,9 +1,10 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Replicate API client module.
+Provides an asynchronous function for image generation or modification using the Replicate API.
 
-Asynchronous client for interacting with OpenRouter models.
+This module offers a single function, `image_generation`, which utilizes the Replicate
+API to generate or modify images based on a specified image model and input parameters.
 """
 
 import replicate
@@ -21,13 +22,20 @@ log = structlog.stdlib.get_logger(__name__)
 
 async def image_generation(image_model: str, input_params: dict) -> str:
     """
-    Generates or modifies an existing image using the Replicate API.
+    Generate or modify an image using the Replicate API.
+
+    Process:
+    -------
+    -------
+        - Makes an asynchronous API call to Replicate using the specified image model and input parameters.
+        - Extracts the URL of the generated or modified image from the API response.
+        - Validates the extracted URL to ensure it starts with "http:" or "https:".
 
     Args:
     ----
     ----
-        - image_model (str): The name of the image model to use.
-        - input_params (dict): The input parameters for the image model.
+        - image_model (str): The name of the image model to use for generation or modification.
+        - input_params (dict): A dictionary containing the input parameters for the image model.
 
     Returns:
     -------
@@ -38,8 +46,8 @@ async def image_generation(image_model: str, input_params: dict) -> str:
     ------
     ------
         - RequestException: If an error occurs while making the API request.
-        - ReplicateError: If an error occurs while interacting with the API.
-        - ValueError: If an invalid input parameter is provided.
+        - ReplicateError: If an error occurs while interacting with the Replicate API.
+        - ValueError: If an invalid input parameter is provided or the extracted URL is invalid.
         - TypeError: If an invalid data type is provided.
         - OSError: If an I/O error occurs while processing the file.
         - Exception: If an unexpected error occurs during the process execution.

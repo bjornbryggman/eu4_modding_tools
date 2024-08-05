@@ -17,33 +17,38 @@ from app.utils.file_utils import read_file, write_file
 log = structlog.stdlib.get_logger(__name__)
 
 
-def modify_terrain_file(
-    input_file: Path, regex_pattern: str, terrain_data: dict[str, dict]
-) -> None:
+def modify_terrain_file(input_file: Path, regex_pattern: str, terrain_data: dict[str, dict]) -> None:
     """
-    Modifies the terrain override information in the terrain.txt file.
+    Modify the terrain override information in the terrain.txt file.
 
-    This function modifies the terrain.txt file by replacing the terrain
-    override information for each terrain type with the updated values
-    from the processed terrain data.
+    Process:
+    -------
+    -------
+        - Reads the content of the input file.
+        - Extracts the categories block using a regular expression.
+        - Iterates through the terrain data dictionary.
+        - For each terrain type, updates the terrain override information within the categories block.
+        - Writes the updated content back to the input file.
 
     Args:
     ----
-    - input_file (Path): The path to the terrain.txt file.
-    - regex_pattern (str): The regular expression pattern to match entity definitions.
-    - terrain_data (dict[str, dict]): A dictionary mapping terrain names
-      to their properties, including updated terrain overrides.
+    ----
+        - input_file (Path): The path to the terrain.txt file to be modified.
+        - regex_pattern (str): The regular expression pattern to match the categories block.
+        - terrain_data (dict[str, dict]): A dictionary containing terrain data, where keys are terrain names and values are dictionaries with terrain information.
 
     Returns:
     -------
-    - None.
+    -------
+        - None
 
-    Raises:
-    ------
-    - Exception: If an unexpected error occurs.
-    - OSError: If an error occurs during file operations.
-    - PermissionError: If there's a permission issue when accessing files.
-    - ValueError: If there's an issue with data processing or unexpected data format.
+    Exceptions:
+    ----------
+    ----------
+        - Exception: Raised for any general exception during file processing.
+        - OSError: Raised for operating system-related errors during file operations.
+        - PermissionError: Raised if the file cannot be written to due to permission issues.
+        - ValueError: Raised if the provided input parameters are invalid.
     """
     try:
         content = read_file(input_file)
@@ -53,16 +58,12 @@ def modify_terrain_file(
         categories_start, categories_content, categories_end = categories_match.groups()
 
         for terrain_name, terrain_info in terrain_data.items():
-            terrain_match = re.search(
-                rf"({terrain_name}\s*=\s*{{)([^}}]+)(}})", categories_content, re.DOTALL
-            )
+            terrain_match = re.search(rf"({terrain_name}\s*=\s*{{)([^}}]+)(}})", categories_content, re.DOTALL)
             if terrain_match:
                 terrain_start, terrain_content, terrain_end = terrain_match.groups()
                 terrain_override = terrain_info["terrain_override"]
                 updated_terrain_content = re.sub(
-                    r"terrain_override\s*=\s*{[^}]*}",
-                    f"terrain_override = {terrain_override}",
-                    terrain_content,
+                    r"terrain_override\s*=\s*{[^}]*}", f"terrain_override = {terrain_override}", terrain_content
                 )
                 categories_content = categories_content.replace(
                     terrain_match.group(0), f"{terrain_start}{updated_terrain_content}{terrain_end}"
