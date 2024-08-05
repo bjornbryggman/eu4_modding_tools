@@ -82,24 +82,15 @@ def populate_database() -> None:
         data_extraction.parse_entity_file(GeographyConfig.AREA_TXT, PARSE_ENTITY_REGEX, Area)
         log.info("Areas parsed.")
 
-        data_extraction.parse_entity_file(
-            GeographyConfig.REGION_TXT, PARSE_REGION_REGEX, Region, Area, True, "_area"
-        )
+        data_extraction.parse_entity_file(GeographyConfig.REGION_TXT, PARSE_REGION_REGEX, Region, Area, True, "_area")
         log.info("Regions parsed.")
 
         data_extraction.parse_entity_file(
-            GeographyConfig.SUPERREGION_TXT,
-            PARSE_ENTITY_REGEX,
-            SuperRegion,
-            Region,
-            True,
-            "_region",
+            GeographyConfig.SUPERREGION_TXT, PARSE_ENTITY_REGEX, SuperRegion, Region, True, "_region"
         )
         log.info("Superregions parsed.")
 
-        data_extraction.parse_entity_file(
-            GeographyConfig.CONTINENT_TXT, PARSE_ENTITY_REGEX, Continent
-        )
+        data_extraction.parse_entity_file(GeographyConfig.CONTINENT_TXT, PARSE_ENTITY_REGEX, Continent)
         log.info("Continents parsed.")
 
         data_extraction.parse_entity_file(GeographyConfig.CLIMATE_TXT, PARSE_ENTITY_REGEX, Climate)
@@ -110,9 +101,7 @@ def populate_database() -> None:
         )
         log.info("Terrains parsed.")
 
-        data_modification.modify_terrain_file(
-            GeographyConfig.TERRAIN_TXT, UPDATE_TERRAIN_REGEX, terrain_data
-        )
+        data_modification.modify_terrain_file(GeographyConfig.TERRAIN_TXT, UPDATE_TERRAIN_REGEX, terrain_data)
         log.info("'terrain.txt' has been updated.")
 
         relationships.set_geographical_relationships()

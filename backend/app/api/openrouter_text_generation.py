@@ -1,61 +1,82 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-This module provides a client for interacting with the OpenRouter API.
+Provides functions for interacting with the OpenRouter API.
 
-It includes functions for making completion requests to the OpenRouter API and
-querying the cost of those requests.
+This module offers functions for making completion requests to the OpenRouter API
+using both standard and structured methods. It also includes a utility function
+for querying OpenRouter to retrieve the cost and statistics associated with a
+specific generation ID.
 """
 
+import os
+
+import instructor
 import openai
 import requests
 import structlog
+from dotenv import load_dotenv
 from openai import OpenAI
+from pydantic import BaseModel
+from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 # Initialize logger for this module.
 log = structlog.stdlib.get_logger(__name__)
 
+# Load environment variables.
+load_dotenv()
+os.environ["OPENAI_API_TOKEN"] = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ====================================================#
-#                    Main function                    #
-# ====================================================#
+
+# ======================================================= #
+#                    Standard function                    #
+# ======================================================= #
 
 
-def completion_request(prompt: list[dict], model: str, api_key: str, stream: bool) -> tuple:
+@retry(wait=wait_random_exponential(min=1, max=10), stop=stop_after_attempt(5))
+def standard_completion_request(messages: list[dict], llm_model: str, temperature: float, stream: bool) -> tuple:
     """
-    Makes a completion request to the OpenRouter API and returns the response.
+    Make a standard completion request to the OpenRouter API with retry mechanism.
+
+    Process:
+    -------
+    -------
+        - Sends a chat completion request to the OpenRouter API using the OpenAI client.
+        - Handles streaming responses if specified.
+        - Returns the generated response from the LLM.
 
     Args:
     ----
-        - prompt (list[dict]): The input prompt for the completion request.
-        - model (str): The name of the model to use for the completion request.
-        - api_key (str): The API key for OpenRouter.
-        - stream (bool): Whether to stream the output as chunks or not.
+    ----
+        - messages (list[dict]): The list of messages to be sent to the LLM.
+        - llm_model (str): The identifier of the LLM model to be used.
+        - temperature (float): The temperature parameter for controlling the creativity of the LLM.
+        - stream (bool): Whether to stream the response as chunks or return the full response at once.
 
     Returns:
     -------
-        - A tuple containing the response text and the cost of the API call.
+    -------
+        - tuple: A tuple containing the generated response from the LLM.
 
-    Raises:
-    ------
-        - openai.OpenAIError: If an error occurs while interacting
-            with the OpenRouter model.
-        - requests.RequestException: If an error occurs while making
-            the request to the OpenRouter API.
-        - ValueError: If an invalid input parameter is provided.
-        - Exception: If an unexpected error occurs during the process execution.
-
+    Exceptions:
+    ----------
+    ----------
+        - openai.OpenAIError: Raised when an error occurs during API communication with OpenAI.
+        - requests.RequestException: Raised when a network-related error occurs during API requests.
+        - ValueError: Raised when invalid input parameters are provided.
+        - Exception: Raised for any other unexpected errors during execution.
     """
     try:
         log.debug("Calling the OpenRouter API...")
 
-        # Make an asynchronous completion request using the OpenAI client.
+        # Make a synchronous completion request using the OpenAI client.
         client = OpenAI()
         completion = client.chat.completions.create(
-            model=model,
-            messages=prompt,
+            messages=messages,
+            model=llm_model,
+            temperature=temperature,
             stream=stream,
-            max_tokens=500,
             extra_query={"transforms": {}, "min_p": {"value": 0.1}},
         )
 
@@ -67,24 +88,16 @@ def completion_request(prompt: list[dict], model: str, api_key: str, stream: boo
                     completion.id = chunk.id
                 part = chunk.choices[0].delta.content
                 chunks.append(part)
-            cohesive_text = "".join(chunks)
+            response = "".join(chunks)
 
-        # Filter the response into a readable format.
         else:
-            cohesive_text = completion.choices[0].message.content
-
-        # Calculate the cost of the API call.
-        cost_and_stats = query_cost_and_stats(completion.id, api_key)
-        total_cost = cost_and_stats.get("total_cost")
-        formatted_string = f"${float(total_cost):.10f}"
+            # Filter the response into a readable format.
+            response = completion.choices[0].message.content
 
         log.debug("OpenRouter completion request successful: %s", completion)
-        log.debug("Cost for API call: %s", formatted_string)
 
     except openai.OpenAIError as error:
-        log.exception(
-            "APIError occurred while interacting with the OpenRouter model.", exc_info=error
-        )
+        log.exception("APIError occurred while interacting with the OpenRouter model.", exc_info=error)
     except requests.RequestException as error:
         log.exception("Request to the OpenRouter API failed.", exc_info=error)
     except ValueError as error:
@@ -93,35 +106,111 @@ def completion_request(prompt: list[dict], model: str, api_key: str, stream: boo
         log.exception("An unexpected error occurred during the process execution.", exc_info=error)
 
     else:
-        return (cohesive_text, formatted_string)
+        return response
 
 
-# ====================================================#
-#                   Helper function                   #
-# ====================================================#
+# ======================================================= #
+#                   Structured function                   #
+# ======================================================= #
 
 
-def query_cost_and_stats(generation_id: str, api_key: str) -> dict:
+def structured_completion_request(
+    messages: list[dict], llm_model: str, pydantic_data_model: BaseModel
+) -> tuple[dict, float]:
     """
-    Queries the cost for a given generation ID from OpenRouter.
+    Makes a completion request to the OpenRouter API and returns a structured JSON response.
+
+    Process:
+    -------
+    -------
+        - Initializes an OpenAI client in JSON mode.
+        - Sends a completion request to the OpenRouter API with the provided messages and model.
+        - Extracts the response content and API cost from the completion result.
 
     Args:
     ----
     ----
-        - generation_id (str): The ID of the generation to query.
-        - api_key (str): The API key for OpenRouter.
+        - messages (list[dict]): A list of dictionaries containing the messages for the completion request.
+        - llm_model (str): The identifier for the language model to be used for the completion request.
+        - pydantic_data_model (BaseModel): The Pydantic data model for the response.
 
     Returns:
     -------
     -------
-        - A dictionary containing the cost for the generation.
+        - tuple[dict, float]: A tuple containing the response content as a dictionary and the API cost as a float.
 
-    Raises:
-    ------
-    ------
-        - requests.RequestException: If an error occurs while making
-            the request to the OpenRouter API.
+    Exceptions:
+    ----------
+    ----------
+        - openai.OpenAIError: Raised when an error occurs during API communication with OpenAI.
+        - requests.RequestException: Raised when a network-related error occurs during API requests.
+        - ValueError: Raised when invalid input parameters are provided.
+        - Exception: Raised for any other unexpected errors during execution.
+    """
+    try:
+        log.debug("Calling the OpenRouter API...")
 
+        # Make a synchronous completion request using the patched OpenAI client.
+        client = instructor.from_openai(OpenAI(), mode=instructor.Mode.JSON)
+        completion = client.chat.completions.create(
+            messages=messages, model=llm_model, response_model=pydantic_data_model
+        )
+
+        # Filter the response into a readable format.
+        response = completion.choices[0].message.content
+
+        # Fetch the cost of the API call.
+        cost_and_stats = query_cost_and_stats(completion.id, OPENAI_API_KEY)
+        api_cost = cost_and_stats.get("total_cost")
+
+        log.debug("OpenRouter completion request successful: %s", completion)
+
+    except openai.OpenAIError as error:
+        log.exception("APIError occurred while interacting with the OpenRouter model.", exc_info=error)
+    except requests.RequestException as error:
+        log.exception("Request to the OpenRouter API failed.", exc_info=error)
+    except ValueError as error:
+        log.exception("Invalid input parameter provided.", exc_info=error)
+    except Exception as error:
+        log.exception("An unexpected error occurred during the process execution.", exc_info=error)
+
+    else:
+        return (response, api_cost)
+
+
+# ==================================================== #
+#                   Utility function                   #
+# ==================================================== #
+
+
+def query_cost_and_stats(generation_id: str, api_key: str) -> dict:
+    """
+    Query OpenRouter for the cost and stats associated with a specific generation ID.
+
+    Process:
+    -------
+    -------
+        - Constructs the API URL using the provided generation ID.
+        - Sets up headers with the provided API key.
+        - Makes a GET request to the OpenRouter API.
+        - Extracts the cost data from the JSON response.
+        - Returns a dictionary containing the total cost.
+
+    Args:
+    ----
+    ----
+        - generation_id (str): The unique identifier of the generation to query.
+        - api_key (str): The API key for accessing OpenRouter.
+
+    Returns:
+    -------
+    -------
+        - dict: A dictionary containing the total cost of the generation, or an empty dictionary if the request fails.
+
+    Exceptions:
+    ----------
+    ----------
+        - requests.RequestException: Raised if an error occurs during the HTTP request to OpenRouter.
     """
     # Construct the API URL with the generation ID.
     api_url = f"https://openrouter.ai/api/v1/generation?id={generation_id}"

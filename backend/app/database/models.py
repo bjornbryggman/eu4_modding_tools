@@ -1,12 +1,15 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-This module provides database functionality for storing and retrieving data.
+Defines SQLModel and Pydantic models for various entities in the game.
 
-It utilizes SQLite and SQLModel for database management.
+This module defines SQLModel and Pydantic models for various entities in the game,
+These models are used for representing and interacting with data in the database 
+and for generating image prompts.
 """
 
 import structlog
+from pydantic import BaseModel
 from sqlmodel import Field, Relationship, SQLModel, create_engine
 
 # Initialize logger for this module.
@@ -138,7 +141,7 @@ class ScalingFactor(SQLModel, table=True):
 
 
 # =============================================================== #
-#               Models used for 'terrain_script.py'               #
+#               SQLModels used for 'terrain_script.py'            #
 # =============================================================== #
 
 
@@ -249,8 +252,8 @@ class Climate(SQLModel, table=True):
 
     Attributes:
     ----------
-    - id (int): The primary key of the climate type.
-    - name (str): The name of the climate type (e.g., "tropical", "arid").
+        - id (int): The primary key of the climate type.
+        - name (str): The name of the climate type (e.g., "tropical", "arid").
     """
 
     id: int | None = Field(default=None, primary_key=True)
@@ -266,8 +269,8 @@ class Terrain(SQLModel, table=True):
 
     Attributes:
     ----------
-    - id (int): The primary key of the terrain type.
-    - name (str): The name of the terrain type (e.g., "farmlands", "mountains").
+        - id (int): The primary key of the terrain type.
+        - name (str): The name of the terrain type (e.g., "farmlands", "mountains").
     """
 
     id: int | None = Field(default=None, primary_key=True)
@@ -283,12 +286,12 @@ class Province(SQLModel, table=True):
 
     Attributes:
     ----------
-    - id (int): The primary key of the province (same as the province ID in game files).
-    - name (str): The name of the province (e.g., "Stockholm").
-    - area_id (int): Foreign key referencing the area this province belongs to.
-    - climate_id (int): Foreign key referencing the climate type of this province.
-    - terrain_id (int): Foreign key referencing the terrain type of this province.
-    - image_path (str): The path to the generated image for this province.
+        - id (int): The primary key of the province (same as the province ID in game files).
+        - name (str): The name of the province (e.g., "Stockholm").
+        - area_id (int): Foreign key referencing the area this province belongs to.
+        - climate_id (int): Foreign key referencing the climate type of this province.
+        - terrain_id (int): Foreign key referencing the terrain type of this province.
+        - image_path (str): The path to the generated image for this province.
     """
 
     id: int = Field(primary_key=True)
@@ -311,3 +314,63 @@ class Province(SQLModel, table=True):
     area: Area | None = Relationship(back_populates="provinces")
     climate: Climate | None = Relationship(back_populates="provinces")
     terrain: Terrain | None = Relationship(back_populates="provinces")
+
+
+# ===================================================================== #
+#               Pydantic models used for 'terrain_script.py'            #
+# ===================================================================== #
+
+
+class TerrainImageGenerationPrompt(BaseModel):
+    """
+    A Pydantic model for structured generation of image prompts for Europa Universalis 4 provinces.
+
+    Purpose:
+    --------
+    --------
+        - To provide a standardized format for generating detailed image prompts.
+        - To ensure consistency and completeness in prompt generation for EU4 province terrains.
+
+    Utility:
+    --------
+    --------
+        - Facilitates the creation of rich, descriptive prompts for AI image generation.
+        - Ensures all necessary elements (terrain, climate, reasoning, final prompt) are included.
+        - Aids in maintaining a consistent style across generated province images.
+
+    Attributes:
+    ----------
+    ----------
+        - terrain_feature (str): A specific geological or topographical feature characteristic of the terrain type.
+        - climate_detail (str): A particular aspect or phenomenon related to the climate type.
+        - internal_reasoning (str): The thought process behind selecting the terrain feature and climate detail.
+        - prompt (str): The final, concise prompt for AI image generation, incorporating all elements.
+
+    Usage:
+    ------
+    ------
+        - Used in conjunction with LLM APIs to generate structured image prompts.
+        - Can be easily serialized to and from JSON for API interactions.
+        - Provides a clear structure for prompt generation, enhancing consistency across multiple provinces.
+
+    Note:
+    ----
+    ----
+        - All fields are required and must be provided when creating an instance of this model.
+    """
+
+    terrain_feature: str = Field(..., description="A specific geological or topographical feature characteristic of the terrain type.")
+    climate_detail: str = Field(..., description="A particular aspect or phenomenon related to the climate type.")
+    internal_reasoning: str = Field(..., description="The thought process behind selecting the terrain feature and climate detail, and how they relate to the province.")
+    prompt: str = Field(..., description="The final, concise prompt for AI image generation, incorporating the terrain and climate elements in the specified digital concept art style.")
+
+    class Config:
+        schema_extra = {
+            "description": "A structured format for generating image prompts for Europa Universalis 4 provinces, focusing on terrain and climate characteristics in a digital concept art style.",
+            "example": {
+                "terrain_feature": "gently sloping arable land",
+                "climate_detail": "golden autumnal foliage",
+                "internal_reasoning": "The province features rolling farmlands in a temperate climate, with gently sloping arable land and the warm hues of golden autumnal foliage. We need to capture a sense of serene beauty and the bounty of the harvest season.",
+                "prompt": "Digital concept art of a serene, pastoral landscape with rolling farmlands. Golden wheat fields and vibrant green pastures stretch to the horizon. Soft, diffused lighting bathes the scene in a warm glow. A winding river in the distance reflects the sky, dotted with small boats. Atmospheric perspective creates layers of depth. Painterly style with a color palette of warm golds, soft greens, and cool blues. Wispy clouds drift across a vast sky."
+            }
+        }
