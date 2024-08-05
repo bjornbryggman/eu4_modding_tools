@@ -6,6 +6,7 @@
 
 ### Fixes
 
+* Forgot to clean out frontend directory.. PR [#10](https://github.com/bjornbryggman/eu4_modding_tools/pull/10) by [@bjornbryggman](https://github.com/bjornbryggman).
 * Fixed a problem with the Github Actions workflows where the updates to the CHANGELOG were being misdirected to  the 'development' branch instead of the 'main' branch,. PR [#5](https://github.com/bjornbryggman/EU4-Modding-Tools/pull/5) by [@bjornbryggman](https://github.com/bjornbryggman).
 
 ### Refactors
