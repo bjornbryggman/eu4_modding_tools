@@ -76,11 +76,11 @@ def generate_docstring(llm_model: str, temperature: float, output_path: Path = N
         # Parse the JSON content
         content_list = json.loads(content)
         # The 'docstring' is in the second dictionary of the list
-        docstring = content_list[1].get('docstring', '')
+        docstring = content_list[1].get("docstring", "")
 
         # Get the name of the calling script
         caller_script = Path(sys.argv[0])
-        output_path = caller_script.with_suffix('.md')
+        output_path = caller_script.with_suffix(".md")
 
         # Ensure the directory exists
         output_path.parent.mkdir(parents=True, exist_ok=True)
