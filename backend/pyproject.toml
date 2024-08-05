@@ -1,5 +1,5 @@
 [project]
-name = "EU4_Modding_Tools"
+name = "eu4_modding_tools"
 version = "0.5"
 description = "Various scripts for modding Europa Universalis 4."
 
