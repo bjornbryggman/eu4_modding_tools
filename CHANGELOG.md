@@ -12,6 +12,10 @@
 
 * Swept through the backend and did a comprehensive code refactoring with proper segmentation between different modules and functions.. PR [#7](https://github.com/bjornbryggman/EU4-Modding-Tools/pull/7) by [@bjornbryggman](https://github.com/bjornbryggman).
 
+### Docs
+
+* Basically re-wrote all module and function docstrings, leading to huge improvements in code readability. PR [#8](https://github.com/bjornbryggman/EU4-Modding-Tools/pull/8) by [@bjornbryggman](https://github.com/bjornbryggman).
+
 ## License
 
 This project is licensed under the terms of the MIT license.
