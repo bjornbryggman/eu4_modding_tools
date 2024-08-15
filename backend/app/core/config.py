@@ -125,7 +125,7 @@ class ScalingConfig:
         self.working_dir = resources_path / "working_directory"
 
         # DDS files.
-        self.working_dir_dds = self.working_dir /  "dds"
+        self.working_dir_dds = self.working_dir / "dds"
         self.working_dir_dds_to_png = self.working_dir_dds / "dds_png"
         self.working_dir_dds_4k = self.working_dir_dds / "dds_png_4k"
         self.working_dir_dds_2k = self.working_dir_dds / "dds_png_2k"
@@ -159,4 +159,4 @@ class PromptConfig:
         # Prompt folder
         prompt_dir = self.base_config.root_path / "backend" / "app" / "robot"
         self.prompt_yaml = prompt_dir / "prompts.yaml"
-        self.documentation_yaml = prompt_dir/ "documentation.yaml"
+        self.documentation_yaml = prompt_dir / "documentation.yaml"
