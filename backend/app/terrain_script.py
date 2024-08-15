@@ -14,7 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.config import GeographyConfig
 from app.database import relationships
-from app.database.models import Area, Climate, Continent, Region, SuperRegion
+from app.database.models import Area, Climate, Continent, Province, Region, SuperRegion
 from app.functions import data_extraction, data_modification
 from app.utils import db_utils
 
@@ -79,7 +79,7 @@ def populate_database() -> None:
         data_extraction.parse_positions_file(GeographyConfig.POSITIONS_TXT, PARSE_POSITIONS_REGEX)
         log.info("Provinces parsed.")
 
-        data_extraction.parse_entity_file(GeographyConfig.AREA_TXT, PARSE_ENTITY_REGEX, Area)
+        data_extraction.parse_entity_file(GeographyConfig.AREA_TXT, PARSE_ENTITY_REGEX, Area, Province)
         log.info("Areas parsed.")
 
         data_extraction.parse_entity_file(GeographyConfig.REGION_TXT, PARSE_REGION_REGEX, Region, Area, True, "_area")
@@ -90,10 +90,10 @@ def populate_database() -> None:
         )
         log.info("Superregions parsed.")
 
-        data_extraction.parse_entity_file(GeographyConfig.CONTINENT_TXT, PARSE_ENTITY_REGEX, Continent)
+        data_extraction.parse_entity_file(GeographyConfig.CONTINENT_TXT, PARSE_ENTITY_REGEX, Continent, Province)
         log.info("Continents parsed.")
 
-        data_extraction.parse_entity_file(GeographyConfig.CLIMATE_TXT, PARSE_ENTITY_REGEX, Climate)
+        data_extraction.parse_entity_file(GeographyConfig.CLIMATE_TXT, PARSE_ENTITY_REGEX, Climate, Province)
         log.info("Climates parsed.")
 
         terrain_data = data_extraction.parse_terrain_file(

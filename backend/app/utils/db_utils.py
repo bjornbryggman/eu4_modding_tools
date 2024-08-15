@@ -17,13 +17,19 @@ from typing import Any
 import structlog
 from sqlmodel import Session, SQLModel, create_engine, select
 
+from app.core.config import BaseConfig
 from app.database.models import File, Property, ScalingFactor
+from app.utils.file_utils import create_directory
 
 # Initialize logger for this module
 log = structlog.stdlib.get_logger(__name__)
 
+# Create a BaseConfig instance
+base_config = BaseConfig()
+
 # Database configuration
-sqlite_url = "sqlite:///database/SQLite.db"
+create_directory(base_config.database_file.parent)
+sqlite_url = f"sqlite:///{base_config.database_file.absolute()}"
 engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
 
 
