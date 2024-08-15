@@ -10,15 +10,10 @@ and for generating image prompts.
 
 import structlog
 from pydantic import BaseModel
-from sqlmodel import Field, Relationship, SQLModel, create_engine
+from sqlmodel import Field, Relationship, SQLModel
 
 # Initialize logger for this module.
 log = structlog.stdlib.get_logger(__name__)
-
-# Construct the SQLite URL.
-sqlite_url = "sqlite:///database/SQLite.db"
-engine = create_engine(sqlite_url, connect_args={"check_same_thread": False})
-SQLModel.metadata.create_all(engine)
 
 
 # ============================================================= #
@@ -159,7 +154,7 @@ class Continent(SQLModel, table=True):
     name: str = Field(index=True)
 
     # One-to-many relationships.
-    superregions: list["Region"] = Relationship(back_populates="continent")
+    superregions: list["SuperRegion"] = Relationship(back_populates="continent")
     regions: list["Region"] = Relationship(back_populates="continent")
     areas: list["Area"] = Relationship(back_populates="continent")
     provinces: list["Province"] = Relationship(back_populates="continent")
@@ -210,7 +205,7 @@ class Region(SQLModel, table=True):
     superregion_id: int | None = Field(default=None, foreign_key="superregion.id")
 
     # One-to-one relationships.
-    continent: Continent | None = Relationship(back_populates="superregions")
+    continent: Continent | None = Relationship(back_populates="regions")
     superregion: SuperRegion | None = Relationship(back_populates="regions")
 
     # One-to-many relationships.
@@ -325,52 +320,61 @@ class TerrainImageGenerationPrompt(BaseModel):
     """
     A Pydantic model for structured generation of image prompts for Europa Universalis 4 provinces.
 
-    Purpose:
-    --------
-    --------
-        - To provide a standardized format for generating detailed image prompts.
-        - To ensure consistency and completeness in prompt generation for EU4 province terrains.
-
-    Utility:
-    --------
-    --------
-        - Facilitates the creation of rich, descriptive prompts for AI image generation.
-        - Ensures all necessary elements (terrain, climate, reasoning, final prompt) are included.
-        - Aids in maintaining a consistent style across generated province images.
-
     Attributes:
     ----------
     ----------
         - terrain_feature (str): A specific geological or topographical feature characteristic of the terrain type.
         - climate_detail (str): A particular aspect or phenomenon related to the climate type.
-        - internal_reasoning (str): The thought process behind selecting the terrain feature and climate detail.
         - prompt (str): The final, concise prompt for AI image generation, incorporating all elements.
 
     Usage:
     ------
     ------
         - Used in conjunction with LLM APIs to generate structured image prompts.
-        - Can be easily serialized to and from JSON for API interactions.
-        - Provides a clear structure for prompt generation, enhancing consistency across multiple provinces.
-
-    Note:
-    ----
-    ----
-        - All fields are required and must be provided when creating an instance of this model.
     """
 
-    terrain_feature: str = Field(..., description="A specific geological or topographical feature characteristic of the terrain type.")
-    climate_detail: str = Field(..., description="A particular aspect or phenomenon related to the climate type.")
-    internal_reasoning: str = Field(..., description="The thought process behind selecting the terrain feature and climate detail, and how they relate to the province.")
-    prompt: str = Field(..., description="The final, concise prompt for AI image generation, incorporating the terrain and climate elements in the specified digital concept art style.")
-
-    class Config:
+    terrain_feature: str = Field(
+        ...,
+        title="Terrain Feature",
+        description="A specific geological or topographical feature characteristic of the terrain type.",
         schema_extra = {
-            "description": "A structured format for generating image prompts for Europa Universalis 4 provinces, focusing on terrain and climate characteristics in a digital concept art style.",
-            "example": {
-                "terrain_feature": "gently sloping arable land",
-                "climate_detail": "golden autumnal foliage",
-                "internal_reasoning": "The province features rolling farmlands in a temperate climate, with gently sloping arable land and the warm hues of golden autumnal foliage. We need to capture a sense of serene beauty and the bounty of the harvest season.",
-                "prompt": "Digital concept art of a serene, pastoral landscape with rolling farmlands. Golden wheat fields and vibrant green pastures stretch to the horizon. Soft, diffused lighting bathes the scene in a warm glow. A winding river in the distance reflects the sky, dotted with small boats. Atmospheric perspective creates layers of depth. Painterly style with a color palette of warm golds, soft greens, and cool blues. Wispy clouds drift across a vast sky."
+            "additional_information": {
+                "examples": ["gently sloping arable land", "rugged mountain peaks", "dense tropical rainforest"],
+                "restrictions": {
+                    "max_length": 50,
+                    "min_length": 5
+                }
             }
         }
+    )
+
+    climate_detail: str = Field(
+        ...,
+        title="Climate Detail",
+        description="A particular aspect or phenomenon related to the climate type.",
+        schema_extra = {
+            "additional_information": {
+            "examples": ["golden autumnal foliage", "heavy monsoon rains", "scorching desert heat"],
+                "restrictions": {
+                    "max_length": 50,
+                    "min_length": 5
+                }
+            }
+        }
+    )
+
+    prompt: str = Field(
+        ...,
+        title="Image Generation Prompt",
+        description="The final, concise prompt for AI image generation, incorporating the terrain and climate elements in the specified art style.",
+        schema_extra = {
+            "additional_information": {
+            "examples": ["Digital concept art of a serene, pastoral landscape with rolling farmlands. Golden wheat fields and vibrant green pastures stretch to the horizon. Soft, diffused lighting bathes the scene in a warm glow. A winding river in the distance reflects the sky, dotted with small boats. Atmospheric perspective creates layers of depth. Painterly style with a color palette of warm golds, soft greens, and cool blues."],
+            "restrictions": {
+                "max_length": 400,
+                "min_length": 100,
+                "must_include": ["digital concept art", "painterly style", "color palette"]
+                }
+            }
+        }
+    )

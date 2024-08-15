@@ -132,6 +132,7 @@ def parse_entity_file(
 
         with session_scope() as session:
             for name, children in entities:
+                # Add parent entity to the database
                 parent = parent_model(name=name)
                 session.add(parent)
                 session.flush()
@@ -139,12 +140,16 @@ def parse_entity_file(
                 if verbose:
                     child_names = re.findall(rf"\w+{child_identifier}", children)
                     for child_name in child_names:
+                        # Fetch the corresponding child entity from the database
                         child = session.get(child_model, str(child_name))
+                        # Set the relationship between parent & child entities
                         setattr(child, f"{parent_model.__name__.lower()}", parent)
                 else:
                     child_ids = re.findall(r"\d+", children)
                     for child_id in child_ids:
+                        # Fetch the corresponding child entity from the database
                         child = session.get(child_model, int(child_id))
+                        # Set the relationship between parent & child entities
                         setattr(child, f"{parent_model.__name__.lower()}", parent)
 
     except (Exception, OSError, PermissionError, ValueError) as error:

@@ -28,24 +28,31 @@ class BaseConfig:
 
     Attributes:
     ----------
-        - ROOT_PATH (Path):
-        - INPUT_DIR (Path): Path to the directory that contains the input files.
-        - ERROR_DIR (Path): Path to the directory that stores error files.
+        - root_path (Path):
+        - input_dir (Path): Path to the directory that contains the input files.
+        - error_dir (Path): Path to the directory that stores error files.
 
-        - LOG_DIR (Path): Path to the directory for storing log files.
-        - LOG_LEVEL (str): Logging level (e.g., "DEBUG", "INFO", "WARNING", "ERROR").
+        - log_dir (Path): Path to the directory for storing log files.
+        - log_level (str): Logging level (e.g., "DEBUG", "INFO", "WARNING", "ERROR").
     """
 
     def __init__(self) -> None:
         "Initializes the BaseConfig with values from environment variables."
-        # Base directories.
-        self.ROOT_PATH = Path(__file__).resolve().parent.parent
-        self.INPUT_DIR = self.ROOT_PATH / "resources" / "input_directory"
-        self.ERROR_DIR = self.ROOT_PATH / "resources" / "error_directory"
+        # Root directory
+        self.root_path = Path(__file__).resolve().parent.parent.parent.parent
+
+        # Input directory
+        self.input_dir = self.root_path / "frontend" / "resources" / "input_directory"
+
+        # Error directory
+        self.error_dir = self.root_path / "frontend" / "resources" / "error_directory"
+
+        # Database file
+        self.database_file = self.root_path / "backend" / "app" / "database" / "SQLite.db"
 
         # Logging configuration.
-        self.LOG_DIR = self.ROOT_PATH / "log_directory"
-        self.LOG_LEVEL = "DEBUG"
+        self.log_dir = self.root_path / "frontend" / "log_directory"
+        self.log_level = "DEBUG"
 
 
 class GeographyConfig:
@@ -54,14 +61,14 @@ class GeographyConfig:
 
     Attributes:
     ----------
-        - POSITIONS_TXT (Path):
-        - AREA_TXT (Path):
-        - REGION_TXT (Path):
-        - SUPERREGION_TXT (Path):
-        - CONTINENT_TXT (Path):
+        - positions_txt (Path):
+        - area_txt (Path):
+        - region_txt (Path):
+        - superregion_txt (Path):
+        - continent_txt (Path):
 
-        - CLIMATE_TXT (Path):
-        - TERRAIN_TXT (Path):
+        - climate_txt (Path):
+        - terrain_txt (Path):
     """
 
     def __init__(self) -> None:
@@ -70,15 +77,15 @@ class GeographyConfig:
         self.base_config = BaseConfig()
 
         # Text files containing geographical entities.
-        self.POSITIONS_TXT = self.base_config.INPUT_DIR / "map" / "positions.txt"
-        self.AREA_TXT = self.base_config.INPUT_DIR / "map" / "area.txt"
-        self.REGION_TXT = self.base_config.INPUT_DIR / "map" / "region.txt"
-        self.SUPERREGION_TXT = self.base_config.INPUT_DIR / "map" / "superregion.txt"
-        self.CONTINENT_TXT = self.base_config.INPUT_DIR / "map" / "continent.txt"
+        self.positions_txt = self.base_config.input_dir / "map" / "positions.txt"
+        self.area_txt = self.base_config.input_dir / "map" / "area.txt"
+        self.region_txt = self.base_config.input_dir / "map" / "region.txt"
+        self.superregion_txt = self.base_config.input_dir / "map" / "superregion.txt"
+        self.continent_txt = self.base_config.input_dir / "map" / "continent.txt"
 
         # Text files containing weather & terrain information.
-        self.CLIMATE_TXT = self.base_config.INPUT_DIR / "map" / "climate.txt"
-        self.TERRAIN_TXT = self.base_config.INPUT_DIR / "map" / "terrain.txt"
+        self.climate_txt = self.base_config.input_dir / "map" / "climate.txt"
+        self.terrain_txt = self.base_config.input_dir / "map" / "terrain.txt"
 
 
 class ScalingConfig:
@@ -87,25 +94,25 @@ class ScalingConfig:
 
     Attributes:
     ----------
-        - WORKING_DIR_DDS (Path):
-        - WORKING_DIR_DDS_TO_PNG (Path):
-        - WORKING_DIR_DDS_4K (Path):
-        - WORKING_DIR_DDS_2k (Path):
+        - working_dir_dds (Path):
+        - working_dir_dds_to_png (Path):
+        - working_dir_dds_4k (Path):
+        - working_dir_dds_2k (Path):
 
-        - WORKING_DIR_TGA (Path):
-        - WORKING_DIR_TGA_TO_PNG (Path):
-        - WORKING_DIR_TGA_4K (Path):
-        - WORKING_DIR_TGA_2k (Path):
+        - working_dir_tga (Path):
+        - working_dir_tga_to_png (Path):
+        - working_dir_tga_4k (Path):
+        - working_dir_tga_2k (Path):
 
-        - TEXT_COMPARISON_ORIGINAL_DIR (Path): Path to the directory containing original files
+        - text_comparison_original_dir (Path): Path to the directory containing original files
             for scaling factor comparison.
-        - TEXT_COMPARISON_DIR_2K (Path): Path to the directory containing 2K files
+        - text_comparison_dir_2k (Path): Path to the directory containing 2K files
             for scaling factor comparison.
-        - TEXT_COMPARISON_DIR_4K (Path): Path to the directory containing 4K files
+        - text_comparison_dir_4k (Path): Path to the directory containing 4K files
             for scaling factor comparison.
 
-        - OUTPUT_DIR_2K (Path): Path to the output directory for 2K files.
-        - OUTPUT_DIR_4K (Path): Path to the output directory for 4K files.
+        - output_dir_2k (Path): Path to the output directory for 2K files.
+        - output_dir_4k (Path): Path to the output directory for 4K files.
     """
 
     def __init__(self) -> None:
@@ -114,28 +121,25 @@ class ScalingConfig:
         self.base_config = BaseConfig()
 
         # Working directories.
+        resources_path = self.base_config.root_path / "frontend" / "resources"
+        self.working_dir = resources_path / "working_directory"
+
         # DDS files.
-        self.WORKING_DIR_DDS = self.base_config.ROOT_PATH / "resources" / "working_directory" / "dds"
-        self.WORKING_DIR_DDS_TO_PNG = self.WORKING_DIR_DDS / "dds_png"
-        self.WORKING_DIR_DDS_4K = self.WORKING_DIR_DDS / "dds_png_4k"
-        self.WORKING_DIR_DDS_2K = self.WORKING_DIR_DDS / "dds_png_2k"
+        self.working_dir_dds = self.working_dir /  "dds"
+        self.working_dir_dds_to_png = self.working_dir_dds / "dds_png"
+        self.working_dir_dds_4k = self.working_dir_dds / "dds_png_4k"
+        self.working_dir_dds_2k = self.working_dir_dds / "dds_png_2k"
 
         # TGA files.
-        self.WORKING_DIR_TGA = self.base_config.ROOT_PATH / "resources" / "working_directory" / "tga"
-        self.WORKING_DIR_TGA_TO_PNG = self.WORKING_DIR_TGA / "tga_png"
-        self.WORKING_DIR_TGA_4K = self.WORKING_DIR_TGA / "tga_png_4k"
-        self.WORKING_DIR_TGA_2K = self.WORKING_DIR_TGA / "tga_png_2k"
-
-        # Text directories.
-        self.TEXT_COMPARISON_DIR = self.base_config.ROOT_PATH / "resources" / "text_comparison_directory"
-        self.TEXT_COMPARISON_ORIGINAL_DIR = self.TEXT_COMPARISON_DIR / "text_files_original"
-        self.TEXT_COMPARISON_DIR_4K = self.TEXT_COMPARISON_DIR / "text_files_4k"
-        self.TEXT_COMPARISON_DIR_2K = self.TEXT_COMPARISON_DIR / "text_files_2k"
+        self.working_dir_tga = self.working_dir / "tga"
+        self.working_dir_tga_to_png = self.working_dir_tga / "tga_png"
+        self.working_dir_tga_4k = self.working_dir_tga / "tga_png_4k"
+        self.working_dir_tga_2k = self.working_dir_tga / "tga_png_2k"
 
         # Output directories.
-        self.OUTPUT_DIR = self.base_config.ROOT_PATH / "resources" / "output_directory"
-        self.OUTPUT_DIR_4K = self.OUTPUT_DIR / "output_4k"
-        self.OUTPUT_DIR_2K = self.OUTPUT_DIR / "output_2k"
+        self.output_dir = resources_path / "output_directory"
+        self.output_dir_4k = self.output_dir / "output_4k"
+        self.output_dir_2k = self.output_dir / "output_2k"
 
 
 class PromptConfig:
@@ -152,7 +156,7 @@ class PromptConfig:
         # Create an instance of the BaseConfig class.
         self.base_config = BaseConfig()
 
-        # Prompt folder.
-        self.PROMPT_DIR = self.base_config.ROOT_PATH / "robot"
-        self.PROMPT_YAML = self.PROMPT_DIR / "prompts.yaml"
-        self.DOCUMENTATION_YAML = self.PROMPT_DIR / "documentation.yaml"
+        # Prompt folder
+        prompt_dir = self.base_config.root_path / "backend" / "app" / "robot"
+        self.prompt_yaml = prompt_dir / "prompts.yaml"
+        self.documentation_yaml = prompt_dir/ "documentation.yaml"

@@ -3,7 +3,7 @@
 """
 Insert succinct one-liner here (no more than 60 characters).
 
-Insert more descriptive explanation of the module here, max 4 rows, max 100 characters per row.
+Insert more descriptive explanation of the module here, max 3 rows, max 100 characters per row.
 """
 
 import re
