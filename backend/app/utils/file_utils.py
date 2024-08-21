@@ -3,12 +3,9 @@
 """
 Provides a collection of utility functions for file I/O, directory management, and YAML processing.
 
-This module offers a variety of utility functions that can be used across the project. It includes
-functions for reading and writing files, creating and deleting directories, encoding and decoding
-images as base64 strings, and working with YAML data.
-
-These functions aim to provide a centralized and reusable set of tools for common file and data
-manipulation tasks.
+This module offers a variety of utility functions that aim aim to provide a centralized and reusable
+set of tools for common file and data manipulation tasks. It includes functions for reading and writing files,
+creating and deleting directories, encoding and decoding images as base64 strings, and working with YAML data.
 """
 
 import base64

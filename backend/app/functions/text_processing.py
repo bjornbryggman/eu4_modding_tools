@@ -1,9 +1,11 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Insert succinct one-liner here (no more than 60 characters).
+Provides functions for scaling positional values in text files.
 
-Insert more descriptive explanation of the module here, max 3 rows, max 100 characters per row.
+This module offers utilities for scaling positional values (e.g., x, y, width, height)
+in text files based on a specified scaling factor. It uses regular expressions to identify
+and modify these values, and leverages multiprocessing for parallel processing to improve performance.
 """
 
 import multiprocessing
@@ -53,13 +55,13 @@ def apply_scaling_factors(pattern: re, content: str, scaling_factor: str) -> str
         - Exception: For any other unexpected errors during the scaling process.
     """
     try:
-        # Apply scaling to content.
+        # Apply scaling to content
         def replacer(match: re.Match) -> str:
             return scale_values(match, scaling_factor)
 
         updated_content = re.sub(pattern, replacer, content, flags=re.IGNORECASE)
 
-    # Return original content if an error occurs.
+    # Return original content if an error occurs
     except ValueError as error:
         log.exception("Invalid scaling factor provided.", exc_info=error)
         return content
@@ -106,7 +108,7 @@ def scale_values(match: re.Match, scale_factor: float) -> str:
         if any(x in value for x in ["%", "@", "10s"]) or value == "-1" or scale_factor is None:
             return f"{prop} = {value}"
 
-        # Handle complex size format, e.g.: size = {x = 5 y = 5}.
+        # Handle complex size format, e.g.: size = {x = 5 y = 5}
         if value.startswith("{"):
             return f"{prop} = " + re.sub(
                 r"([\w_]+)\s*=\s*(-?\d+(?:\.\d+)?)",
@@ -122,7 +124,7 @@ def scale_values(match: re.Match, scale_factor: float) -> str:
         if not value.replace(".", "", 1).replace("-", "", 1).isdigit():
             return f"{prop} = {value}"
 
-        # Handle simple size format, e.g.: size = 17.
+        # Handle simple size format, e.g.: size = 17
         scaled_value = round(float(value) * scale_factor)
 
     except ValueError:
@@ -169,7 +171,7 @@ def scale_positional_values_worker(args: tuple[Path, Path, Path, str]) -> None:
     pattern = r"(\b(?:x|y|width|height|maxWidth|maxHeight|size|borderSize|spacing|position|pos_x)\b)\s*=\s*({[^}]+}|-?\d+(?:\.\d+)?%?|[^}\n]+)"
 
     try:
-        # Read the content of a file.
+        # Read the content of a file
         content = file_utils.read_file(input_file)
 
         if content is not None:
@@ -177,7 +179,7 @@ def scale_positional_values_worker(args: tuple[Path, Path, Path, str]) -> None:
             scaled_content = apply_scaling_factors(pattern, content, scaling_factor)
 
             if scaled_content != content:
-                # Calculate the relative output path to maintain directory structure.
+                # Calculate the relative output path to maintain directory structure
                 relative_path = input_file.relative_to(input_directory)
                 output_path = output_directory / relative_path.parent
 
@@ -191,7 +193,7 @@ def scale_positional_values_worker(args: tuple[Path, Path, Path, str]) -> None:
                 log.debug(" No changes have been made to %s.", input_file.name)
 
         else:
-            # Skip to the next file if no content is found.
+            # Skip to the next file if no content is found
             log.error("No content found in file: %s", input_file)
 
     except Exception as error:
@@ -241,13 +243,13 @@ def scale_positional_values(
     log.info("Scaling positional values in %s files with a factor of %s.", input_format, scaling_factor)
 
     try:
-        # Use a ProcessPoolExecutor to run the worker function in parallel.
+        # Use a ProcessPoolExecutor to run the worker function in parallel
         input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
         with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
             args = [(input_directory, output_directory, input_file, scaling_factor) for input_file in input_files]
             results = list(executor.map(scale_positional_values_worker, args, chunksize=10))
 
-            # Consume the iterator to trigger any exceptions.
+            # Consume the iterator to trigger any exceptions
             for _ in results:
                 pass
 
