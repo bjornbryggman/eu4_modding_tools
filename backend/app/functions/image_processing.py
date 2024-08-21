@@ -1,12 +1,11 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Provides functions for image conversion and resizing using Texconv and Imagemagick.
+Provides functions for converting and resizing game assets.
 
-This module offers two main functionalities: image conversion and resizing. It leverages
-Texconv for image conversion, with Imagemagick as a fallback option. For resizing,
-it utilizes the Imagemagick library (through the Wand package). The module utilizes
-multiprocessing to speed up these operations by running them in parallel.
+This module offers utilities for converting images between formats using Texconv and
+Imagemagick (Wand library), as well as resizing images using Imagemagick (Wand library).
+It leverages multiprocessing for parallel processing to improve performance.
 """
 
 import multiprocessing
@@ -33,11 +32,12 @@ log = structlog.stdlib.get_logger(__name__)
 
 def image_conversion_worker(args: tuple) -> None:
     """
-    Worker function for image conversion using Texconv.
+    Converts a single image using Texconv or Imagemagick as a fallback.
 
     Process:
     -------
     -------
+        - Extracts arguments from the provided tuple.
         - Calculates the relative output path to maintain directory structure.
         - Constructs and runs the Texconv command for image conversion.
         - If Texconv fails, attempts conversion using Imagemagick as a fallback.
@@ -73,38 +73,38 @@ def image_conversion_worker(args: tuple) -> None:
     (input_file, input_directory, output_directory, error_directory, command_options, output_format) = args
 
     try:
-        # Calculate the relative output path to maintain directory structure.
+        # Calculate the relative output path to maintain directory structure
         relative_path = input_file.relative_to(input_directory)
         output_path = output_directory / relative_path.parent
         output_path.mkdir(parents=True, exist_ok=True)
 
-        # Construct Texconv command.
+        # Construct Texconv command
         texconv_command = [
             "texconv",
             *command_options,
             "-ft",
-            output_format.lower(),  # Output file type.
+            output_format.lower(),
             "-o",
-            str(output_path),  # Output directory.
-            str(input_file),  # Input file.
+            str(output_path),
+            str(input_file),
         ]
 
-        # Run Texconv command.
+        # Run Texconv command
         subprocess.run(texconv_command, check=True, capture_output=True, text=True)
         log.debug("Successfully converted %s to %s.", input_file.name, output_format.upper())
 
-    # Fallback to using Imagemagick in case of problems.
+    # Fallback to using Imagemagick in case of problems
     except subprocess.CalledProcessError as error:
         log.exception("Texconv failed to convert %s. Attempting Imagemagick fallback.", input_file, exc_info=error)
 
         try:
-            # Convert the image using Imagemagick (Wand implementation).
+            # Convert the image using Imagemagick (Wand implementation)
             with Image(filename=str(input_file)) as img:
                 img.format = output_format
                 img.save(filename=str(output_path))
             log.debug("Successfully converted %s to %s using Imagemagick.", input_file.name, output_format.upper())
 
-        # Copy problematic file to error directory for manual processing as a last resort.
+        # Copy problematic file to error directory for manual processing as a last resort
         except CorruptImageError as error:
             log.exception("Failed to read image file %s.", input_file, exc_info=error)
 
@@ -132,7 +132,7 @@ def image_conversion_worker(args: tuple) -> None:
 
 def image_resizing_worker(args: tuple) -> None:
     """
-    Worker function for image resizing using Imagemagick.
+    Resizes a single image using Imagemagick (Wand library).
 
     Process:
     -------
@@ -172,12 +172,12 @@ def image_resizing_worker(args: tuple) -> None:
     (input_file, input_directory, output_directory, scaling_factor, chosen_filter) = args
 
     try:
-        # Calculate the relative output path to maintain directory structure.
+        # Calculate the relative output path to maintain directory structure
         relative_path = input_file.relative_to(input_directory)
         output_path = output_directory / relative_path
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Open the image, resize it, and save it to the output path.
+        # Open the image, resize it, and save it to the output path
         with Image(filename=str(input_file)) as img:
             img.resize(
                 int(img.width * scaling_factor),
@@ -213,7 +213,7 @@ def image_conversion(
     output_format: str,
 ) -> None:
     """
-    Converts images between formats using Texconv, with Imagemagick as a fallback.
+    Converts images between formats using Texconv, with Imagemagick (Wand library) as a fallback.
 
     Process:
     -------
@@ -254,7 +254,7 @@ def image_conversion(
             output_format.upper(),
         )
 
-        # Use a ProcessPoolExecutor to run the worker function in parallel.
+        # Use a ProcessPoolExecutor to run the worker function in parallel
         input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
         with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
             args = [
@@ -263,7 +263,7 @@ def image_conversion(
             ]
             futures = list(executor.map(image_conversion_worker, args, chunksize=10))
 
-            # Consume the iterator to trigger any exceptions.
+            # Consume the iterator to trigger any exceptions
             for _ in futures:
                 pass
 
@@ -283,7 +283,7 @@ def image_resizing(
     input_directory: Path, output_directory: Path, input_format: str, scaling_factor: float, chosen_filter: str
 ) -> None:
     """
-    Resizes images according to a specified scaling factor using Imagemagick.
+    Resizes images according to a specified scaling factor using Imagemagick (Wand library).
 
     Process:
     -------
@@ -313,7 +313,7 @@ def image_resizing(
         - ValueError: If an invalid scaling factor is provided.
         - Exception: If an unexpected error occurs.
     """
-    # Check if the Wand package is available.
+    # Check if the Wand package is available
     if not check_for_wand_package:
         return
 
@@ -326,7 +326,7 @@ def image_resizing(
             chosen_filter,
         )
 
-        # Use a ProcessPoolExecutor to run the worker function in parallel.
+        # Use a ProcessPoolExecutor to run the worker function in parallel
         input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
         with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
             args = [
@@ -335,7 +335,7 @@ def image_resizing(
             ]
             futures = list(executor.map(image_resizing_worker, args, chunksize=10))
 
-            # Consume the iterator to trigger any exceptions.
+            # Consume the iterator to trigger any exceptions
             for _ in futures:
                 pass
 

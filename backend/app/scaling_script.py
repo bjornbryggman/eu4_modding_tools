@@ -1,10 +1,14 @@
 # Copyright 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Insert succinct one-liner here (no more than 60 characters).
+Scales game assets for different resolutions.
 
-Insert more descriptive explanation of the module here, max 4 rows, max 100 characters per row.
+This script automates the process of scaling game assets (images and GUI files)
+for different resolutions. It utilizes the functions from the 'image_processing'
+and 'text_processing' modules to perform image conversion, resizing, and scaling
+of positional values in GUI files.
 """
+
 
 import contextlib
 from pathlib import Path
@@ -22,12 +26,12 @@ log = structlog.stdlib.get_logger(__name__)
 base_config = BaseConfig()
 scaling_config = ScalingConfig()
 
-# ============================================================= #
-#                   Image Processing Workflow                   #
-# ============================================================= #
+# =========================================== #
+#           Directory Configuration           #
+# =========================================== #
 
 
-# Directory configuration, see config.py for more information.
+# See '/app/core/config.py' for more information
 working_directories = [
     scaling_config.working_dir_dds,
     scaling_config.working_dir_tga,
@@ -41,25 +45,55 @@ working_directories = [
 output_directories = [base_config.error_dir, scaling_config.output_dir_4k, scaling_config.output_dir_2k]
 
 
-def process_images() -> None:
-    """
-    The main entry point of the script.
+# ===================================================== #
+#           1080p -> 1440p -> 2160p  Workflow           #
+# ===================================================== #
 
-    This function handles the overall workflow of the image processing pipeline.
+
+def fullhd_to_quadhd_to_ultrahd() -> None:
+    """
+    Scales game assets from 1080p to 1440p and 2160p resolutions.
+
+    Process:
+    -------
+    -------
+        - Deletes any old files (except input files) before initiating workflow.
+        - Unzips the contents of any potential .zip files.
+        - Converts DDS and TGA assets to PNG format.
+        - Upscales 1080p DDS and TGA assets to 2160p.
+        - Downscales 2160p DDS and TGA assets to 1440p.
+        - Converts 2160p and 1440p PNG assets to DDS and TGA format.
+        - Scales positional values in GUI text files (1080p -> 2160p and 1080p -> 1440p).
+        - Deletes working directories after finishing workflow.
+        - Removes empty directories.
+
+    Args:
+    ----
+    ----
+        - None.
+
+    Returns:
+    -------
+    -------
+        - None.
+
+    Exceptions:
+    ----------
+    ----------
+        - Exception: If an unexpected error occurs during the workflow.
     """
     log.info("Initiating image processing workflow...")
 
-    # Delete any old files (except input files) before initiating workflow.
+    # Delete any old files (except input files) before initiating workflow
     for path in working_directories + output_directories:
         file_utils.delete_directory(path)
         file_utils.create_directory(path)
 
-    # Unzip the contents of any potential .zip files.
+    # Unzip the contents of any potential .zip files
     file_utils.unzip_files(base_config.input_dir, base_config.input_dir)
 
-    # Convert DDS and TGA assets to PNG format.
+    # Convert DDS assets to PNG format
     dds_or_tga_to_png_options = ["-y", "-wiclossless"]
-    # Overwrites files and enables lossless conversion to PNG.
     image_processing.image_conversion(
         base_config.input_dir,
         scaling_config.working_dir_dds_to_png,
@@ -68,6 +102,8 @@ def process_images() -> None:
         "DDS",
         "PNG",
     )
+
+    # Convert TGA assets to PNG format
     image_processing.image_conversion(
         base_config.input_dir,
         scaling_config.working_dir_tga_to_png,
@@ -77,25 +113,28 @@ def process_images() -> None:
         "PNG",
     )
 
-    # Resize DDS assets.
+    # Upscale 1080p DDS assets to 2160p
     image_processing.image_resizing(
         scaling_config.working_dir_dds_to_png, scaling_config.working_dir_dds_4k, "PNG", 2.0, "SINC"
     )
+
+    # Downscale 2160p DDS assets to 1440p
     image_processing.image_resizing(
         scaling_config.working_dir_dds_4k, scaling_config.working_dir_dds_2k, "PNG", 0.6, "SINC"
     )
 
-    # Resize TGA assets.
+    # Upscale 1080p TGA assets to 2160p
     image_processing.image_resizing(
         scaling_config.working_dir_tga_to_png, scaling_config.working_dir_tga_4k, "PNG", 2.0, "SINC"
     )
+
+    # Downscale 2160p TGA assets to 1440p
     image_processing.image_resizing(
         scaling_config.working_dir_tga_4k, scaling_config.working_dir_tga_2k, "PNG", 0.6, "SINC"
     )
 
-    # Convert PNG assets to DDS format.
+    # Convert 2160p PNG assets to DDS format
     png_to_dds_options = ["-y", "-dx10"]
-    # Overwrites files and forces the use of the "DX10" header extension.
     image_processing.image_conversion(
         scaling_config.working_dir_dds_4k,
         scaling_config.output_dir_4k,
@@ -104,6 +143,8 @@ def process_images() -> None:
         "PNG",
         "DDS",
     )
+
+    # Convert 1440p PNG assets to DDS format
     image_processing.image_conversion(
         scaling_config.working_dir_dds_2k,
         scaling_config.output_dir_2k,
@@ -113,9 +154,8 @@ def process_images() -> None:
         "DDS",
     )
 
-    # Convert PNG assets to TGA format.
+    # Convert 2160p PNG assets to TGA format
     png_to_tga_options = ["-y", "-tga20"]
-    # Overwrites files and forces the use of the "DX10" header extension.
     image_processing.image_conversion(
         scaling_config.working_dir_tga_4k,
         scaling_config.output_dir_4k,
@@ -124,6 +164,8 @@ def process_images() -> None:
         "PNG",
         "TGA",
     )
+
+    # Convert 1440p PNG assets to TGA format.
     image_processing.image_conversion(
         scaling_config.working_dir_tga_2k,
         scaling_config.output_dir_2k,
@@ -133,37 +175,162 @@ def process_images() -> None:
         "TGA",
     )
 
-    # Delete working directories after finishing workflow.
+    log.info("Image processing workflow completed successfully.")
+    log.info("Initiating text processing workflow...")
+
+    # Scale positional values in GUI text files (1080p -> 2160p).
+    text_processing.scale_positional_values(base_config.input_dir, scaling_config.output_dir_4k, "GUI", 1.8)
+
+    # Scale positional values in GUI text files (1080p -> 1440p).
+    text_processing.scale_positional_values(base_config.input_dir, scaling_config.output_dir_2k, "GUI", 1.2)
+
+    log.info("Text processing workflow completed successfully.")
+
+    # Delete working directories after finishing workflow
     for path in working_directories:
         file_utils.delete_directory(path)
-    Path.rmdir(scaling_config.working_dir)
 
-    # Removes error directory if empty.
+    # Remove empty directories
     with contextlib.suppress(OSError):
-        Path.rmdir(base_config.error_dir)
+        Path.rmdir(scaling_config.working_dir)
+        for empty_directory in output_directories:
+            Path.rmdir(empty_directory)
 
 
-# ============================================================ #
-#                   Text Processing Workflow                   #
-# ============================================================ #
+# ============================================ #
+#           1440p -> 2160p  Workflow           #
+# ============================================ #
 
 
-def text_positional_value_scaling() -> None:
+def quadhd_to_ultrahd() -> None:
     """
-    Scales positional values in text GUI files.
+    Scales game assets from 1440p to 2160p resolution.
 
-    This function applies a specific scaling factor to positional values in the
-    targeted input files and writes the scaled content to the output directory.
+    Process:
+    -------
+    -------
+        - Deletes any old files (except input files) before initiating workflow.
+        - Unzips the contents of any potential .zip files.
+        - Converts DDS and TGA assets to PNG format.
+        - Upscales 1440p DDS and TGA assets to 2160p.
+        - Converts 2160p PNG assets to DDS and TGA format.
+        - Scales positional values in GUI text files (1440p -> 2160p).
+        - Deletes working directories after finishing workflow.
+        - Removes empty directories.
+
+    Args:
+    ----
+    ----
+        - None.
+
+    Returns:
+    -------
+    -------
+        - None.
+
+    Exceptions:
+    ----------
+    ----------
+        - Exception: If an unexpected error occurs during the workflow.
     """
-    log.info("Initiating GUI scaling workflow...")
+    # Directory configuration, see config.py for more information.
+    working_directories = [
+        scaling_config.working_dir_dds,
+        scaling_config.working_dir_tga,
+        scaling_config.working_dir_dds_to_png,
+        scaling_config.working_dir_dds_4k,
+        scaling_config.working_dir_tga_to_png,
+        scaling_config.working_dir_tga_4k,
+    ]
+    output_directories = [base_config.error_dir, scaling_config.output_dir_4k]
 
-    # Scale positional values GUI text files (for 2K monitors).
-    text_processing.scale_positional_values(base_config.input_dir, scaling_config.output_dir_2k, "GUI", 1.2)
+    log.info("Initiating image processing workflow...")
+
+    # Delete any old files (except input files) before initiating workflow
+    for path in working_directories + output_directories:
+        file_utils.delete_directory(path)
+        file_utils.create_directory(path)
+
+    # Unzip the contents of any potential .zip files
+    file_utils.unzip_files(base_config.input_dir, base_config.input_dir)
+
+    # Convert DDS assets to PNG format
+    dds_or_tga_to_png_options = ["-y", "-wiclossless"]
+    image_processing.image_conversion(
+        base_config.input_dir,
+        scaling_config.working_dir_dds_to_png,
+        base_config.error_dir,
+        dds_or_tga_to_png_options,
+        "DDS",
+        "PNG",
+    )
+
+    # Convert TGA assets to PNG format
+    image_processing.image_conversion(
+        base_config.input_dir,
+        scaling_config.working_dir_tga_to_png,
+        base_config.error_dir,
+        dds_or_tga_to_png_options,
+        "TGA",
+        "PNG",
+    )
+
+    # Upscale 1440p DDS assets to 2160p
+    image_processing.image_resizing(
+        scaling_config.working_dir_dds_to_png, scaling_config.working_dir_dds_4k, "PNG", 1.5, "SINC"
+    )
+
+    # Upscale 1440p TGA assets to 2160p
+    image_processing.image_resizing(
+        scaling_config.working_dir_tga_to_png, scaling_config.working_dir_tga_4k, "PNG", 1.5, "SINC"
+    )
+
+    # Convert PNG assets to DDS format
+    png_to_dds_options = ["-y", "-dx10"]
+    image_processing.image_conversion(
+        scaling_config.working_dir_dds_4k,
+        scaling_config.output_dir_4k,
+        base_config.error_dir,
+        png_to_dds_options,
+        "PNG",
+        "DDS",
+    )
+
+    # Convert PNG assets to TGA format
+    png_to_tga_options = ["-y", "-tga20"]
+    image_processing.image_conversion(
+        scaling_config.working_dir_tga_4k,
+        scaling_config.output_dir_4k,
+        base_config.error_dir,
+        png_to_tga_options,
+        "PNG",
+        "TGA",
+    )
+
+    log.info("Image processing workflow completed successfully.")
+    log.info("Initiating text processing workflow...")
+
+    # Scale positional values in GUI text files (1440p -> 2160p)
+    text_processing.scale_positional_values(base_config.input_dir, scaling_config.output_dir_4k, "GUI", 1.5)
+
+    log.info("Text processing workflow completed successfully.")
+
+    # Delete working directories after finishing workflow
+    for path in working_directories:
+        file_utils.delete_directory(path)
+
+    # Remove empty directories
+    with contextlib.suppress(OSError):
+        Path.rmdir(scaling_config.working_dir)
+        for empty_directory in output_directories:
+            Path.rmdir(empty_directory)
+
+
+# =============================== #
+#           Main Script           #
+# =============================== #
 
 
 if __name__ == "__main__":
     logging_utils.init_logger(base_config.log_level, base_config.log_dir)
-    process_images()
-    log.info("Image processing workflow completed successfully.")
-    text_positional_value_scaling()
-    log.info("Text processing workflow completed successfully.")
+    quadhd_to_ultrahd()

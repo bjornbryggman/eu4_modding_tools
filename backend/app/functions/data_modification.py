@@ -1,9 +1,10 @@
 # Copyright (C) 2024 Björn Gunnar Bryggman. Licensed under the MIT License.
 
 """
-Insert succinct one-liner here (no more than 60 characters).
+Insert succinct one-liner here (no more than 80 characters).
 
-Insert more descriptive explanation of the module here, max 3 rows, max 100 characters per row.
+Insert more descriptive explanation of the module here, max 3 rows,
+max 100 characters per row (less is more, be concise and to the point).
 """
 
 import re

@@ -20,41 +20,60 @@ log = structlog.stdlib.get_logger(__name__)
 #               Models used in 'events_script.py'               #
 # ============================================================= #
 
+# country_decisions
+class Decisions(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    file_path: str
 
+class OriginalDecisionLocalisation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    original_title: str
+    original_description: str
+
+class GeneratedDecisionLocalisation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    generated_title: str
+    generated_description: str
+
+class GeneratedDecisionPrompt(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    prompt: str
+
+class GeneratedDecisionPicture(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    generated_picture: str
+
+
+# ============================================================= #
+#               Models used in 'events_script.py'               #
+# ============================================================= #
+
+# country_event or province_event
 class Event(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    origin: str
-    title: str = Field(index=True)
-    desc: str
-    picture: str = Field(index=True)
-
+    file_path: str
 
 class OriginalEventLocalisation(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    event_id: int = Field(index=True, foreign_key="event.id")
-    event_title: str
-    event_description: str
-
-
-class GeneratedEventLocalisation(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    event_id: int = Field(index=True, foreign_key="event.id")
-    spellchecked_title: str = Field(default=None)
-    spellchecked_description: str = Field(default=None)
-
+    original_title: str
+    original_description: str
 
 class OriginalEventPicture(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    event_id: int = Field(index=True, foreign_key="event.id")
-    original_picture: str = Field(index=True)
+    original_picture: str
 
+class GeneratedEventLocalisation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    generated_title: str
+    generated_description: str
+
+class GeneratedEventPrompt(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    prompt: str
 
 class GeneratedEventPicture(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    event_id: int = Field(index=True, foreign_key="event.id")
-    prompt: str
-    generated_picture: str = Field(index=True)
-
+    generated_picture: str
 
 # =============================================================== #
 #               Models used for 'scaling_script.py'               #
