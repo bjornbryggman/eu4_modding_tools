@@ -9,7 +9,6 @@ and 'text_processing' modules to perform image conversion, resizing, and scaling
 of positional values in GUI files.
 """
 
-
 import contextlib
 from pathlib import Path
 

@@ -65,8 +65,7 @@ def search_text_files(search_string: str, input_format: str, input_directory: Pa
             output_file = output_file / "search_results.txt"
             log.warning("Output file was a directory. Changed to: %s", output_file)
 
-
-        with output_file.open('w', encoding='utf-8') as out_file:
+        with output_file.open("w", encoding="utf-8") as out_file:
             input_files = list(input_directory.rglob(f"*.{input_format.lower()}"))
             for input_file in input_files:
                 content = file_utils.read_file(input_file)
@@ -86,6 +85,9 @@ def search_text_files(search_string: str, input_format: str, input_directory: Pa
     except Exception as error:
         log.exception("An unexpected error occurred.", exc_info=error)
 
+
 # Example usage
+
+
 if __name__ == "__main__":
     search_text_files("GFX_expedition_ongoing_bg", "txt", base_config.input_dir, base_config.input_dir)
