@@ -179,6 +179,7 @@ def scale_positional_values_worker(args: tuple[Path, Path, Path, str]) -> None:
             scaled_content = apply_scaling_factors(pattern, content, scaling_factor)
 
             if scaled_content != content:
+
                 # Calculate the relative output path to maintain directory structure
                 relative_path = input_file.relative_to(input_directory)
                 output_path = output_directory / relative_path.parent

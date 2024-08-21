@@ -188,6 +188,7 @@ def fullhd_to_quadhd_to_ultrahd() -> None:
     # Delete working directories after finishing workflow
     for path in working_directories:
         file_utils.delete_directory(path)
+    Path.rmdir(scaling_config.working_dir)
 
     # Remove empty directories
     with contextlib.suppress(OSError):
