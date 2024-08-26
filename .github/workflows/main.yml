@@ -41,7 +41,7 @@ jobs:
 
       # This step updates the CHANGELOG.md file with the latest changes.
       - name: Update CHANGELOG.md
-        uses: tiangolo/latest-changes@0.3.0
+        uses: tiangolo/latest-changes@0.3.1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           latest_changes_file: CHANGELOG.md
